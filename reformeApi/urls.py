@@ -17,6 +17,12 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
 from apps.user.views import UserViewSet
+from apps.authentication.views import SignUpAPI
+
+
+authentication_patterns = [
+    path('sign-up', SignUpAPI.as_view(), name="sign-up")
+]
 
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -25,4 +31,5 @@ router.register(r"users", UserViewSet, basename="users")
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include(router.urls)),
+    path("authentication/", include(authentication_patterns)),
 ]
