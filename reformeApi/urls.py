@@ -17,11 +17,12 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
 from apps.user.views import UserViewSet
-from apps.authentication.views import SignUpAPI
+from apps.authentication.views import SignUpAPI, LoginAPI
 
 
 authentication_patterns = [
-    path('sign-up', SignUpAPI.as_view(), name="sign-up")
+    path('sign-up', SignUpAPI.as_view(), name="sign-up"),
+    path('login', LoginAPI.as_view(), name="login")
 ]
 
 
