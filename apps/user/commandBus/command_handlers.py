@@ -26,6 +26,8 @@ def handle_update_user(command: UpdateUserCommand):
         user.phone_number = command.phone_number
     if command.password:
         user.set_password(command.password)
+    if command.role:
+        user.role = Role(command.role)
 
     user.save()
     return user

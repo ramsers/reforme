@@ -2,6 +2,7 @@ from rest_framework import serializers
 from apps.user.models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
+from apps.user.value_objects import Role
 
 
 class SignUpValidator(serializers.Serializer):
@@ -9,6 +10,7 @@ class SignUpValidator(serializers.Serializer):
     email = serializers.EmailField(required=True, allow_null=False)
     phone_number = serializers.CharField(required=False, allow_null=True)
     password = serializers.CharField(required=True, allow_null=False)
+    role = serializers.ChoiceField(choices=Role.choices, required=False, allow_null=True)
 
     def validate(self, attrs):
         user = self.context.get('user')

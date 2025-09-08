@@ -7,7 +7,7 @@ class Classes(TimestampModel, UUIDModel):
     name = models.CharField(max_length=255)
     size = models.IntegerField(default=15)
     date = models.DateTimeField(null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='classes')
+    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='classes')
 
     class Meta:
         db_table = "classes"

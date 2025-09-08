@@ -1,6 +1,7 @@
 import typing
 from typing import Optional
 from apps.user.models import User
+from apps.user.value_objects import Role
 
 
 class CreateUserCommand(typing.NamedTuple):
@@ -16,3 +17,4 @@ class UpdateUserCommand(typing.NamedTuple):
     email: str | None = None
     phone_number: str | None = None
     password: str | None = None
+    role: Role | None = None
