@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer  # <-- add this
+    serializer_class = UserSerializer
 
     @action(detail=False, methods=["patch"], url_path="me")
     def me(self, request, *args, **kwargs):
