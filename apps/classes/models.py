@@ -3,7 +3,7 @@ from django.db import models
 from apps.user.models import User
 
 
-class Class(TimestampModel, UUIDModel):
+class Classes(TimestampModel, UUIDModel):
     name = models.CharField(max_length=255)
     size = models.IntegerField(default=15)
     date = models.DateTimeField(null=True)
