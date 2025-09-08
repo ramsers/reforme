@@ -30,6 +30,7 @@ class ClassesViewSet(viewsets.ModelViewSet):
         validator.is_valid(raise_exception=True)
         command = CreateClassCommand(**validator.validated_data, instructor_id=request.user.id)
         created_class = classes_command_bus.handle(command)
+        print('TESTO', created_class, flush=True)
 
         serializer = ClassesSerializer(created_class)
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
