@@ -1,4 +1,4 @@
-from apps.booking.commandBus.commands import CreateBookingCommand
+from apps.booking.commandBus.commands import CreateBookingCommand, DeleteBookingCommand
 from apps.booking.models import Booking
 
 
@@ -10,3 +10,8 @@ def handle_create_booking(command: CreateBookingCommand):
     )
 
     return booking
+
+
+def handle_delete_booking(command: DeleteBookingCommand):
+    booking: Booking = Booking.objects.get(id=command.booking_id)
+    booking.delete()
