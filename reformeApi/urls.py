@@ -19,6 +19,7 @@ from rest_framework import routers
 from apps.user.views import UserViewSet
 from apps.authentication.views import SignUpAPI, LoginAPI
 from apps.classes.views import ClassesViewSet
+from apps.booking.views import BookingViewSet
 
 
 authentication_patterns = [
@@ -30,6 +31,7 @@ authentication_patterns = [
 router = routers.SimpleRouter(trailing_slash=False)
 router.register(r"users", UserViewSet, basename="users")
 router.register(r"classes", ClassesViewSet, basename="classes")
+router.register(r"bookings", BookingViewSet, basename="bookings")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
