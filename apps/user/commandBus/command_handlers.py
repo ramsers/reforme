@@ -7,6 +7,7 @@ def handle_create_user(command: CreateUserCommand):
         name=command.name,
         email=command.email,
         phone_number=command.phone_number,
+        role=command.role
     )
     user.set_password(command.password)
     user.save()

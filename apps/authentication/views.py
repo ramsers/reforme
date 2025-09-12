@@ -32,7 +32,7 @@ class SignUpAPI(APIView):
 
 
 class LoginAPI(APIView):
-    def post(selfself, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         validator = LoginValidator(data={**request.data})
         validator.is_valid(raise_exception=True)
 

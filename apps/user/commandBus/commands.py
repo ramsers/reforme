@@ -9,6 +9,7 @@ class CreateUserCommand(typing.NamedTuple):
     email: str
     password: str
     phone_number: str | None = None
+    role: Role | None = None
 
 
 class UpdateUserCommand(typing.NamedTuple):
