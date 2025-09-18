@@ -21,9 +21,9 @@ class CreateBookingValidator(serializers.Serializer):
 
 
 class DeleteBookingValidator(serializers.Serializer):
-    class_id = serializers.UUIDField(required=True, allow_null=False)
+    booking_id = serializers.UUIDField(required=True, allow_null=False)
 
-    def validate_class_id(self, value):
+    def validate_booking_id(self, value):
         booking_to_delete = Booking.objects.get(id=value)
 
         client = self.context.get('client')

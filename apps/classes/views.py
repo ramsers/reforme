@@ -8,12 +8,23 @@ from apps.classes.validators import CreateClassesValidator, PartialUpdateClasses
 from apps.classes.commandBus.commands import CreateClassCommand, PartialUpdateClassCommand
 from apps.classes.commandBus.command_bus import classes_command_bus
 from rest_framework.permissions import IsAuthenticated
+from apps.classes.filter.classes_filter import ClassesFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class ClassesViewSet(viewsets.ModelViewSet):
     queryset = Classes.objects.all()
-    serializer = ClassesSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class = ClassesSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ClassesFilter
+    # permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == "INSTRUCTOR":
+            return Classes.objects.filter(instructor=user)
+        else:
+            return Classes.objects.all()
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -44,7 +55,8 @@ class ClassesViewSet(viewsets.ModelViewSet):
 
         command = PartialUpdateClassCommand(
             id=instance.id,
-            name=validator.validated_data.get('name'),
+            title=validator.validated_data.get('title'),
+            description=validator.validated_data.get('description'),
             size=validator.validated_data.get('size'),
             date=validator.validated_data.get('date')
         )

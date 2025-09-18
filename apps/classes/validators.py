@@ -3,13 +3,15 @@ from django.utils import timezone
 
 
 class CreateClassesValidator(serializers.Serializer):
-    name = serializers.CharField(required=True, allow_null=False)
+    title = serializers.CharField(required=True, allow_null=False, max_length=45)
+    description = serializers.CharField(required=True, allow_null=False)
     size = serializers.CharField(required=True, allow_null=False)
     date = serializers.DateTimeField(required=True, allow_null=False)
 
 
 class PartialUpdateClassesValidator(serializers.Serializer):
-    name = serializers.CharField(required=False, allow_null=True, max_length=255)
+    title = serializers.CharField(required=False, allow_null=True, max_length=45)
+    description = serializers.CharField(required=False, allow_null=True, max_length=255)
     size = serializers.IntegerField(required=False, allow_null=True, min_value=1)
     date = serializers.DateTimeField(required=False, allow_null=True)
 

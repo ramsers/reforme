@@ -8,15 +8,29 @@ from apps.booking.validators import CreateBookingValidator, DeleteBookingValidat
 from apps.booking.commandBus.commands import CreateBookingCommand, DeleteBookingCommand
 from apps.booking.commandBus.command_bus import booking_command_bus
 from rest_framework.permissions import IsAuthenticated
+from apps.user.value_objects import Role
+from django_filters.rest_framework import DjangoFilterBackend
+from apps.booking.filters.booking_filter import BookingFilter
 
 
 class BookingViewSet(viewsets.ModelViewSet):
-    queryset = Booking.objects.all()
-    serializer = BookingSerializer
+    serializer_class = BookingSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = BookingFilter
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.role == Role.ADMIN:
+            return Booking.objects.all()
+        elif user.role == Role.INSTRUCTOR:
+            return Booking.objects.filter(booked_class__instructor=user)
+        else:
+            return Booking.objects.filter(client=user)
 
     def create(self, request, *args, **kwargs):
-        validator = CreateBookingValidator(data=request.data)
+        validator = CreateBookingValidator(data=request.data, context={"booker": request.user})
         validator.is_valid(raise_exception=True)
         command = CreateBookingCommand(**validator.validated_data)
         booking = booking_command_bus.handle(command)
@@ -26,7 +40,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["delete"], url_path="delete")
     def delete(self, request, *args, **kwargs):
-        validator = DeleteBookingValidator(data={'class_id': self.kwargs.get('pk')}, context={"client": request.user})
+        validator = DeleteBookingValidator(data={'booking_id': self.kwargs.get('pk')}, context={"client": request.user})
         validator.is_valid(raise_exception=True)
 
         command = DeleteBookingCommand(booking_id=self.kwargs.get('pk'))

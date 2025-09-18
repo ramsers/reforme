@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('id', models.CharField(default=uuid.uuid4, max_length=36, primary_key=True, serialize=False, unique=True)),
                 ('email', models.EmailField(max_length=255, unique=True)),
-                ('role', models.CharField(choices=[('INSTRUCTOR', 'Instructor'), ('CLIENT', 'Client')], default='CLIENT', max_length=20)),
+                ('role', models.CharField(choices=[('INSTRUCTOR', 'Instructor'), ('CLIENT', 'Client'), ('ADMIN', 'Admin')], default='CLIENT', max_length=20)),
                 ('name', models.CharField(max_length=255)),
                 ('phone_number', models.CharField(blank=True, max_length=20, null=True)),
             ],

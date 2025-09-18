@@ -10,3 +10,4 @@ class Booking(TimestampModel, UUIDModel):
 
     class Meta:
         db_table = "booking"
+        # db_table = "bookings"

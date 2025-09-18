@@ -14,12 +14,12 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-    @action(detail=False, methods=["patch"], url_path="me")
+    @action(detail=False, methods=["get"])
     def me(self, request, *args, **kwargs):
         user = request.user
-        validator = UpdateUserValidator(data=request.data)
-        validator.is_valid(raise_exception=True)
-        command = UpdateUserCommand(user=request.user, **validator.validated_data)
-        updated_user = user_command_bus.handle(command)
+        # validator = UpdateUserValidator(data=request.data)
+        # validator.is_valid(raise_exception=True)
+        # command = UpdateUserCommand(user=request.user, **validator.validated_data)
+        # updated_user = user_command_bus.handle(command)
 
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)

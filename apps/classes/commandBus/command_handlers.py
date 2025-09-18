@@ -4,7 +4,8 @@ from apps.classes.models import Classes
 
 def handle_create_class(command: CreateClassCommand):
     new_class = Classes(
-        name=command.name,
+        title=command.title,
+        description=command.description,
         size=command.size,
         date=command.date,
         instructor_id=command.instructor_id
@@ -17,8 +18,10 @@ def handle_create_class(command: CreateClassCommand):
 def handle_partial_update_class(command: PartialUpdateClassCommand):
     class_to_update = Classes.objects.get(id=command.id)
 
-    if command.name is not None:
-        class_to_update.name = command.name
+    if command.title is not None:
+        class_to_update.title = command.title
+    if command.description is not None:
+        class_to_update.description = command.description
     if command.size is not None:
         class_to_update.size = command.size
     if command.date is not None:

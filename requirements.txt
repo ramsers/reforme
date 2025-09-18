@@ -4,3 +4,4 @@ mysqlclient>=2.2
 djangorestframework-simplejwt>=5.5.1
 pymessagebus==1.*
 django-cors-headers==3.7.0
+django-filter==25.1
