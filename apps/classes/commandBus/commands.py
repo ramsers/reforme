@@ -9,7 +9,7 @@ class CreateClassCommand(typing.NamedTuple):
     description: str
     size: int
     date: datetime
-    instructor_id: str
+    instructor_id: str | None = None
 
 
 class PartialUpdateClassCommand(typing.NamedTuple):

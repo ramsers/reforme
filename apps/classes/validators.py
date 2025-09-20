@@ -7,6 +7,7 @@ class CreateClassesValidator(serializers.Serializer):
     description = serializers.CharField(required=True, allow_null=False)
     size = serializers.CharField(required=True, allow_null=False)
     date = serializers.DateTimeField(required=True, allow_null=False)
+    instructor_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class PartialUpdateClassesValidator(serializers.Serializer):

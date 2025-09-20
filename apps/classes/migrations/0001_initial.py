@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('size', models.IntegerField(default=15)),
                 ('length', models.IntegerField(default=45)),
                 ('date', models.DateTimeField(null=True)),
-                ('instructor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='classes', to=settings.AUTH_USER_MODEL)),
+                ('instructor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='classes', to=settings.AUTH_USER_MODEL, null=True, blank=True)),
             ],
             options={
                 'db_table': 'classes',
