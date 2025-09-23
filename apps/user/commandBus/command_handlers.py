@@ -9,7 +9,10 @@ def handle_create_user(command: CreateUserCommand):
         phone_number=command.phone_number,
         role=command.role
     )
-    user.set_password(command.password)
+
+    if command.password:
+        user.set_password(command.password)
+
     user.save()
 
     return user

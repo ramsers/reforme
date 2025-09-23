@@ -7,6 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         ordering = ['-created_at']
         fields = [
+            'created_at',
             'email',
             'id',
             'name',

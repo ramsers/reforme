@@ -18,6 +18,8 @@ def handle_create_class(command: CreateClassCommand):
 def handle_partial_update_class(command: PartialUpdateClassCommand):
     class_to_update = Classes.objects.get(id=command.id)
 
+    print('TEST ======================', command, flush=True)
+
     if command.title is not None:
         class_to_update.title = command.title
     if command.description is not None:

@@ -1,7 +1,7 @@
 from apps.classes.models import Classes
 from rest_framework.decorators import permission_classes, action
 from apps.classes.serializers import ClassesSerializer
-from apps.classes.decorators import is_instructor, id_admin
+from apps.classes.decorators import is_instructor, is_admin
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from apps.classes.validators import CreateClassesValidator, PartialUpdateClassesValidator
@@ -24,6 +24,8 @@ class ClassesViewSet(viewsets.ModelViewSet):
         if user.role == "INSTRUCTOR":
             return Classes.objects.filter(instructor=user)
         else:
+            print('HITTING ALL ==================', flush=True)
+            print('HITTING ALL ==================',Classes.objects.all(),  flush=True)
             return Classes.objects.all()
 
     def retrieve(self, request, *args, **kwargs):
@@ -33,9 +35,10 @@ class ClassesViewSet(viewsets.ModelViewSet):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def list(self, request, *args, **kwargs):
+        print('REQUEST ============', request.data, flush=True)
         return super().list(request, *args, **kwargs)
 
-    @id_admin
+    @is_admin
     def create(self, request, *args, **kwargs):
         validator = CreateClassesValidator(data=request.data)
         validator.is_valid(raise_exception=True)
@@ -45,12 +48,14 @@ class ClassesViewSet(viewsets.ModelViewSet):
         serializer = ClassesSerializer(created_class)
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
-    @id_admin
+    @is_admin
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
 
+        print('TEST REQUEST DATA ==========', request.data, flush=True)
+
         validator = PartialUpdateClassesValidator(data={**request.data},
-                                                  context={'instructor': request.user, 'class': instance})
+                                                  context={'user': request.user, 'class': instance})
         validator.is_valid(raise_exception=True)
 
         command = PartialUpdateClassCommand(

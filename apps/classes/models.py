@@ -9,7 +9,9 @@ class Classes(TimestampModel, UUIDModel):
     size = models.IntegerField(default=15)
     length = models.IntegerField(default=45)
     date = models.DateTimeField(null=True)
-    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='classes')
+    instructor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='classes', blank=True, null=True)
 
     class Meta:
         db_table = "classes"
+        ordering = ['-created_at']
+

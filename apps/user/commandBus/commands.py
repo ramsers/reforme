@@ -7,7 +7,7 @@ from apps.user.value_objects import Role
 class CreateUserCommand(typing.NamedTuple):
     name: str
     email: str
-    password: str
+    password: str | None = None
     phone_number: str | None = None
     role: Role | None = None
 

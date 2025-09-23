@@ -6,7 +6,7 @@ class CreateUserValidator(serializers.Serializer):
     name = serializers.CharField(required=True, allow_null=False)
     email = serializers.EmailField(required=True, allow_null=False)
     phone_number = serializers.CharField(required=False, allow_null=True)
-    password = serializers.CharField(required=True, allow_null=False)
+    password = serializers.CharField(required=False, allow_null=True)
 
     def validate_email(self, value):
         user = self.context.get('user')

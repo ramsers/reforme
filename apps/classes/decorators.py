@@ -29,8 +29,13 @@ def is_client(function):
     return decorator
 
 
-def id_admin(function):
+def is_admin(function):
+    """
+    Allows access only to users with role=ADMIN.
+    """
+    @wraps(function)
     def decorator(view, request, *args, **kwargs):
+        print('REQUEST ===============', request)
         return function(view, request, *args, **kwargs)\
             if request.user.is_authenticated and request.user.role == Role.ADMIN\
             else Response(status=status.HTTP_403_FORBIDDEN, data="admins only")
