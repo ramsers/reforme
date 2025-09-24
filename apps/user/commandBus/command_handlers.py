@@ -19,8 +19,7 @@ def handle_create_user(command: CreateUserCommand):
 
 
 def handle_update_user(command: UpdateUserCommand):
-    user = command.user
-    print('TEST user ===========', command.user, flush=True)
+    user = User.objects.get(id=command.id)
 
     if command.name:
         user.name = command.name

@@ -20,6 +20,8 @@ class UserViewSet(viewsets.ModelViewSet):
         validator = CreateUserValidator(data={**request.data}, context={"user": request.user})
         validator.is_valid(raise_exception=True)
 
+        print('VALIDATOR ================', validator.validated_data, flush=True)
+
         command = CreateUserCommand(**validator.validated_data)
         user = user_command_bus.handle(command)
 
@@ -45,3 +47,11 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(
             data=UserSerializer(users, many=True).data, status=status.HTTP_200_OK
         )
+
+    def patch(self, request, *args, **kwargs):
+        validator = UpdateUserValidator(data={"id": self.kwargs.get('pk'), **request.data})
+        validator.is_valid(raise_exception=True)
+        command = UpdateUserCommand(**validator.validated_data)
+        updated_user = user_command_bus.handle(command)
+
+        return Response(data=UserSerializer(updated_user).data, status=status.HTTP_200_OK)

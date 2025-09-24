@@ -13,7 +13,7 @@ class CreateUserCommand(typing.NamedTuple):
 
 
 class UpdateUserCommand(typing.NamedTuple):
-    user: User
+    id: str
     name: str | None = None
     email: str | None = None
     phone_number: str | None = None
