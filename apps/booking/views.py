@@ -35,6 +35,11 @@ class BookingViewSet(viewsets.ModelViewSet):
         command = CreateBookingCommand(**validator.validated_data)
         booking = booking_command_bus.handle(command)
         serializer = BookingSerializer(booking)
+        # print('TESTO ==============', serializer.data, flush=True)
+
+
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # return Response(status=status.HTTP_201_CREATED)
 
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 

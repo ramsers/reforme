@@ -24,8 +24,6 @@ class ClassesViewSet(viewsets.ModelViewSet):
         if user.role == "INSTRUCTOR":
             return Classes.objects.filter(instructor=user)
         else:
-            print('HITTING ALL ==================', flush=True)
-            print('HITTING ALL ==================',Classes.objects.all(),  flush=True)
             return Classes.objects.all()
 
     def retrieve(self, request, *args, **kwargs):
@@ -35,7 +33,6 @@ class ClassesViewSet(viewsets.ModelViewSet):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def list(self, request, *args, **kwargs):
-        print('REQUEST ============', request.data, flush=True)
         return super().list(request, *args, **kwargs)
 
     @is_admin

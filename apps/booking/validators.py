@@ -19,6 +19,19 @@ class CreateBookingValidator(serializers.Serializer):
 
         return value
 
+    def validate(self, attrs):
+        client_id = attrs.get("client_id")
+        class_id = attrs.get("class_id")
+
+        if Booking.objects.filter(client_id=client_id, booked_class_id=class_id).exists():
+            raise serializers.ValidationError("already_booked")
+
+        current_bookings = booked_class.bookings.count()
+        if current_bookings >= booked_class.size:
+            raise serializers.ValidationError("class_full")
+
+        return attrs
+
 
 class DeleteBookingValidator(serializers.Serializer):
     booking_id = serializers.UUIDField(required=True, allow_null=False)
