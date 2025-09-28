@@ -22,6 +22,7 @@ class CreateBookingValidator(serializers.Serializer):
     def validate(self, attrs):
         client_id = attrs.get("client_id")
         class_id = attrs.get("class_id")
+        booked_class = Classes.objects.get(id=class_id)
 
         if Booking.objects.filter(client_id=client_id, booked_class_id=class_id).exists():
             raise serializers.ValidationError("already_booked")

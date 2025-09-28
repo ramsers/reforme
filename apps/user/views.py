@@ -42,11 +42,17 @@ class UserViewSet(viewsets.ModelViewSet):
     @is_admin
     @action(detail=False, methods=["get"], url_path="all-instructors")
     def all_instructors(self, request):
-        users = User.objects.filter(role=Role.INSTRUCTOR)
+        instructors = User.objects.filter(role=Role.INSTRUCTOR)
         print('USERS ===============', users)
-        return Response(
-            data=UserSerializer(users, many=True).data, status=status.HTTP_200_OK
-        )
+        return Response(data=UserSerializer(instructors, many=True).data, status=status.HTTP_200_OK)
+
+    @is_admin
+    @action(detail=False, methods=["get"], url_path="all-clients")
+    def all_clients(self, request):
+        clients = User.objects.filter(role=Role.CLIENT)
+
+        return Response(data=UserSerializer(clients, many=True).data, status=status.HTTP_200_OK)
+
 
     def patch(self, request, *args, **kwargs):
         validator = UpdateUserValidator(data={"id": self.kwargs.get('pk'), **request.data})

@@ -1,7 +1,8 @@
 from rest_framework import serializers
+
+from apps.booking.serializers import BookingClientSerializer
 from apps.classes.models import Classes
 from apps.user.serializers import UserSerializer
-from apps.user.models import User
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -9,11 +10,11 @@ class ClassesSerializer(serializers.ModelSerializer):
     instructor = serializers.SerializerMethodField()
     bookings_count = serializers.SerializerMethodField()
     is_full = serializers.SerializerMethodField()
-    bookers = serializers.SerializerMethodField()
+    bookings = serializers.SerializerMethodField()
 
     def get_instructor(self, obj):
         try:
-            return UserSerializer(obj.instructor).data
+            return UserSerializer(obj.instructor).data if obj.instructor else None
         except ObjectDoesNotExist:
             return None
 
@@ -23,14 +24,16 @@ class ClassesSerializer(serializers.ModelSerializer):
     def get_is_full(self, obj):
         return obj.bookings.count() >= obj.size
 
-    def get_bookers(self, obj):
-        clients = User.objects.filter(booked_class__booked_class=obj)
-
-        return UserSerializer(clients, many=True).data
+    def get_bookings(self, obj):
+        try:
+            return BookingClientSerializer(obj.bookings.all(), many=True, default=[]).data
+        except ObjectDoesNotExist:
+            return None
 
     class Meta:
         model = Classes
         fields = [
+            "id",
             "title",
             "description",
             "size",
@@ -39,5 +42,5 @@ class ClassesSerializer(serializers.ModelSerializer):
             "instructor",
             "bookings_count",
             "is_full",
-            "bookers",
+            "bookings",
         ]

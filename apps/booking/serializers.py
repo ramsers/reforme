@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from apps.classes.serializers import ClassesSerializer
 from apps.user.serializers import UserSerializer
 from apps.booking.models import Booking
 
@@ -15,9 +14,19 @@ class BookingSerializer(serializers.ModelSerializer):
         return UserSerializer(client).data
 
     def get_booked_class(self, value):
+        from apps.classes.serializers import ClassesSerializer
+
         booking = value.booked_class
 
         return ClassesSerializer(booking).data
+
+    class Meta:
+        model = Booking
+        fields = "__all__"
+
+class BookingClientSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField()
+    client = UserSerializer()
 
     class Meta:
         model = Booking
