@@ -13,5 +13,5 @@ class Classes(TimestampModel, UUIDModel):
 
     class Meta:
         db_table = "classes"
-        ordering = ['-created_at']
+        ordering = ['date']
 
