@@ -17,4 +17,5 @@ class User(AbstractBaseUser, UUIDModel, TimestampModel):
     USERNAME_FIELD = 'email'
 
     class Meta:
+        ordering = ['-created_at']
         db_table = "users"

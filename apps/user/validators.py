@@ -32,14 +32,14 @@ class UpdateUserValidator(serializers.Serializer):
 
         if user_to_update.id != user.id and user.role != Role.ADMIN:
             raise serializers.ValidationError("not_allowed")
-        return Value
+        return value
 
 
     def validate(self, attrs):
         email = attrs.get("email")
         if email:
-            user_id = self.context.get("user_id")
-            if User.objects.exclude(id=user_id).filter(email=email).exists():
+            user = self.context.get("user")
+            if User.objects.exclude(id=user.id).filter(email=email).exists():
                 raise serializers.ValidationError("This email is already in use.")
 
         return attrs

@@ -40,14 +40,26 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
-    def patch(self, request, *args, **kwargs):
-        validator = UpdateUserValidator(data={**request.data}, context={"user": request.user})
+    def partial_update(self, request, *args, **kwargs):
+        print('hittin patch')
+        validator = UpdateUserValidator(data={"id": self.kwargs.get('pk'), **request.data},
+                                        context={"user": request.user})
         validator.is_valid(raise_exception=True)
 
+        print('VALIDATOR =====', validator.validated_data, flush=True)
         command = UpdateUserCommand(**validator.validated_data)
-        user = user_command_bus.handle(command)
+        updated_user = user_command_bus.handle(command)
 
-        return Response(data=UserSerializer(user).data, status=status.HTTP_200_OK)
+        return Response(data=UserSerializer(updated_user).data, status=status.HTTP_200_OK)
+
+    # def patch(self, request, *args, **kwargs):
+    #     validator = UpdateUserValidator(data={**request.data}, context={"user": request.user})
+    #     validator.is_valid(raise_exception=True)
+    #
+    #     command = UpdateUserCommand(**validator.validated_data)
+    #     user = user_command_bus.handle(command)
+    #
+    #     return Response(data=UserSerializer(user).data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def me(self, request, *args, **kwargs):
@@ -85,11 +97,3 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(queryset, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request, *args, **kwargs):
-        validator = UpdateUserValidator(data={"id": self.kwargs.get('pk'), **request.data})
-        validator.is_valid(raise_exception=True)
-        command = UpdateUserCommand(**validator.validated_data)
-        updated_user = user_command_bus.handle(command)
-
-        return Response(data=UserSerializer(updated_user).data, status=status.HTTP_200_OK)
