@@ -35,11 +35,6 @@ class BookingViewSet(viewsets.ModelViewSet):
         command = CreateBookingCommand(**validator.validated_data)
         booking = booking_command_bus.handle(command)
         serializer = BookingSerializer(booking)
-        # print('TESTO ==============', serializer.data, flush=True)
-
-
-        # return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # return Response(status=status.HTTP_201_CREATED)
 
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
@@ -48,6 +43,6 @@ class BookingViewSet(viewsets.ModelViewSet):
         validator = DeleteBookingValidator(data={'booking_id': self.kwargs.get('pk')}, context={"client": request.user})
         validator.is_valid(raise_exception=True)
 
-        command = DeleteBookingCommand(booking_id=self.kwargs.get('pk'))
-        booking = booking_command_bus.handle(command)
+        DeleteBookingCommand(booking_id=self.kwargs.get('pk'))
+
         return Response(status=status.HTTP_204_NO_CONTENT)

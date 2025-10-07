@@ -1,0 +1,8 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+  <h2>Booking Confirmed!</h2>
+  <p>Hey {{ client_name }},</p>
+  <p>Your class <strong>{{ class_name }}</strong> with <strong>{{ instructor_name }}</strong> has been booked for <strong>{{ class_date }}</strong>.</p>
+  <p>We’ll see you soon 💪</p>
+{% endblock %}

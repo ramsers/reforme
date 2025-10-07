@@ -6,3 +6,5 @@ pymessagebus==1.*
 django-cors-headers==3.7.0
 django-filter==25.1
 django-rq==3.1
+sendgrid-django
+stripe>=10.0.0

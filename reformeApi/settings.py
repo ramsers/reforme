@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'apps.user.apps.UserConfig',
     'apps.classes.apps.ClassesConfig',
     'apps.booking.apps.BookingConfig',
+    'apps.authentication.apps.AuthenticationConfig',
+    'apps.payment.apps.PaymentConfig',
 ]
 
 MIDDLEWARE = [
@@ -66,7 +68,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'emails')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -166,3 +168,14 @@ RQ_QUEUES = {
         "DEFAULT_TIMEOUT": 360,
     },
 }
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.sendgrid.net"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "apikey"  # literally "apikey" for SendGrid
+EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_API_KEY")
+DEFAULT_FROM_EMAIL = "raheimbbailey@gmail.com"
+STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")

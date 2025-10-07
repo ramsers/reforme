@@ -1,5 +1,7 @@
+from apps.authentication.events.event_dispatchers import authentication_event_dispatcher
 from apps.user.commandBus.commands import CreateUserCommand, UpdateUserCommand
 from apps.user.models import User
+from apps.authentication.events.events import UserSignupEvent
 
 
 def handle_create_user(command: CreateUserCommand):
@@ -14,6 +16,9 @@ def handle_create_user(command: CreateUserCommand):
         user.set_password(command.password)
 
     user.save()
+
+    event = UserSignupEvent(user_id=user.id)
+    authentication_event_dispatcher.dispatch(event)
 
     return user
 
