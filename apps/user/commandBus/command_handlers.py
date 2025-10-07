@@ -20,7 +20,6 @@ def handle_create_user(command: CreateUserCommand):
 
 def handle_update_user(command: UpdateUserCommand):
     user = User.objects.get(id=command.id)
-    print('UPDATED PASSWORD ==============', flush=True)
 
     if command.name:
         user.name = command.name
@@ -29,7 +28,6 @@ def handle_update_user(command: UpdateUserCommand):
     if command.phone_number:
         user.phone_number = command.phone_number
     if command.password:
-        print('UPDATED PASSWORD ==============', command.password, flush=True)
         user.set_password(command.password)
     if command.role:
         user.role = Role(command.role)

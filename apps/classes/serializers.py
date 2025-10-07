@@ -22,7 +22,7 @@ class ClassesSerializer(serializers.ModelSerializer):
         return obj.bookings.count()
 
     def get_is_full(self, obj):
-        return obj.bookings.count() >= obj.size
+        return obj.bookings.count() >= int(obj.size)
 
     def get_bookings(self, obj):
         try:

@@ -21,7 +21,7 @@ class ClassesViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == "INSTRUCTOR":
+        if hasattr(user, 'role') and user.role == "INSTRUCTOR":
             return Classes.objects.filter(instructor=user)
         else:
             return Classes.objects.all()

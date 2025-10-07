@@ -4,7 +4,7 @@ from django.db.models import Count, Q
 
 
 class ClassesFilter(django_filters.FilterSet):
-    date = django_filters.DateFilter(field_name="date__date", lookup_expr="date")
+    date = django_filters.DateFilter(field_name="date", lookup_expr="date")
     start_date = django_filters.DateTimeFilter(field_name="date__date", lookup_expr="gte")
     end_date = django_filters.DateTimeFilter(field_name="date__date", lookup_expr="lte")
     title = django_filters.CharFilter(field_name="title", lookup_expr="icontains")
