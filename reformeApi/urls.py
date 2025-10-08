@@ -16,15 +16,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
+
 from apps.user.views import UserViewSet
 from apps.authentication.views import SignUpAPI, LoginAPI
 from apps.classes.views import ClassesViewSet
 from apps.booking.views import BookingViewSet
+from apps.payment.views import CreateCheckSessionApi
 
 
 authentication_patterns = [
     path('sign-up', SignUpAPI.as_view(), name="sign-up"),
     path('login', LoginAPI.as_view(), name="login")
+]
+
+payment_patterns = [
+    path('create-checkout-session', CreateCheckSessionApi.as_view(), name="create-checkout-session"),
 ]
 
 
@@ -37,4 +43,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include(router.urls)),
     path("authentication/", include(authentication_patterns)),
+    path("payment/", include(payment_patterns)),
 ]

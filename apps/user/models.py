@@ -14,8 +14,8 @@ class User(AbstractBaseUser, UUIDModel, TimestampModel):
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
-
     USERNAME_FIELD = 'email'
+    password = models.CharField(max_length=128, null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
