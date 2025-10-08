@@ -21,7 +21,7 @@ from apps.user.views import UserViewSet
 from apps.authentication.views import SignUpAPI, LoginAPI
 from apps.classes.views import ClassesViewSet
 from apps.booking.views import BookingViewSet
-from apps.payment.views import CreateCheckSessionApi
+from apps.payment.views import CreateCheckSessionApi, ListProductApi
 
 
 authentication_patterns = [
@@ -31,6 +31,7 @@ authentication_patterns = [
 
 payment_patterns = [
     path('create-checkout-session', CreateCheckSessionApi.as_view(), name="create-checkout-session"),
+    path('products', ListProductApi.as_view(), name="products"),
 ]
 
 
