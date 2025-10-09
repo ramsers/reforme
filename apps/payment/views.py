@@ -17,13 +17,13 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 class CreateCheckSessionApi(APIView):
     permission_classes = [IsAuthenticated]
 
-    def create_checkout_session(self, request):
+    def post(self, request):
         user = request.user
 
         command = CreatePassPurchaseCommand(user_id=user.id, **request.data)
-        payment_command_bus.handle(command)
+        session_id = payment_command_bus.handle(command)
 
-        return Response({"status": "success"})
+        return Response(data=session_id, status=status.HTTP_200_OK)
 
 class ListProductApi(APIView):
 
