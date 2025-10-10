@@ -14,7 +14,7 @@ from django.conf import settings
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-class CreateCheckSessionApi(APIView):
+class CreatePurchaseIntentApi(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):

@@ -5,3 +5,5 @@ class CreatePassPurchaseCommand(typing.NamedTuple):
     price_id: str
     product_name: str
     is_subscription: bool
+    price_amount: int
+    currency: str

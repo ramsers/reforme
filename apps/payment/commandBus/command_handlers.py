@@ -6,9 +6,8 @@ import os
 
 def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
     user = User.objects.get(id=command.user_id)
-    # print('Im hitting purchase command ===========', user)
-    checkout_session = ''
-    try:
+    if command.is_subscription:
+
         checkout_session = stripe.checkout.Session.create(
             customer_email=user.email,
             payment_method_types=["card"],
@@ -16,7 +15,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
                 "price": command.price_id,
                 "quantity": 1,
             }],
-            mode="subscription" if command.is_subscription else "payment",
+            mode="subscription",
             success_url=os.environ.get('FRONTEND_URL'),
             cancel_url=os.environ.get('FRONTEND_URL'),
             metadata={
@@ -26,11 +25,15 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
         )
         print('CHECKING THE SESSION ==============', checkout_session, flush=True)
 
-        return checkout_session.id
-    except Exception as e:
-        print('MOLO GOLO SHOLO', e)
+        return checkout_session.url
+    else:
+        print('PAYMENT INTENT ==============', command.price_amount, flush=True)
+        payment_intent = stripe.PaymentIntent.create(
+            amount=int(command.price_amount * 100),
+            currency=command.currency,
+            automatic_payment_methods={"enabled": True},
+            metadata={"user_id": user.id, "product_name": command.product_name},
+        )
 
-    print('Im hitting purchase command ===========', checkout_session, flush=True)
-    # checkout_session = ''
 
-    # return checkout_session.id
+        return payment_intent.client_secret
