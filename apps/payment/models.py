@@ -17,7 +17,7 @@ class PassPurchase(UUIDModel, TimestampModel):
     end_date = models.DateTimeField(blank=True, null=True)
     active = models.BooleanField(default=False)
 
-
     class Meta:
         ordering = ['-created_at']
         db_table = "pass_purchases"
+        # zest - fave - fine - pride

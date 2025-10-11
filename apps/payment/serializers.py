@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.payment.models import PassPurchase
 
 class ProductSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -13,3 +14,9 @@ class ProductSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['id', 'name', 'description', 'id', 'unit_amount', 'currency', 'is_subscription']
+
+
+class PassPurchaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PassPurchase
+        fields = "__all__"
