@@ -67,10 +67,11 @@ class StripeWebhookAPI(APIView):
 
         metadata = object_data.get("metadata", {})  # metadata dict
         is_subscription = event["type"] == "checkout.session.completed"
-        print('HITTING HERE =======================', object_data, flush=True)
+        # print('HITTING HERE =======================', object_data, flush=True)
 
 
         if event['type'] == 'payment_intent.succeeded' or event['type'] == 'checkout.session.completed':
+            print('HITTING INTO CREATE PASS COMMAND ==============================', metadata, flush=True)
             command = CreatePassPurchaseCommand(
                 user_id=metadata.get("user_id"),
                 product_name=metadata.get("product_name"),

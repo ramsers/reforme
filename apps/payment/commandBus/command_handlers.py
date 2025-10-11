@@ -22,6 +22,7 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
             metadata={
                 "user_id": user.id,
                 "product_name": command.product_name,
+                "price_id": command.price_id
             },
         )
         print('CHECKING THE SESSION ==============', checkout_session, flush=True)
@@ -39,8 +40,8 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
         return payment_intent.client_secret
 
 def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
-    user_id = command.user_id
-    user = User.objects.get(id=user_id)
+    print('COMMAND USER ID BRO =====================', command.user_id, flush=True)
+    user = User.objects.get(id=command.user_id)
 
     pass_purchase = None
 
