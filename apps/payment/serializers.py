@@ -19,4 +19,7 @@ class ProductSerializer(serializers.Serializer):
 class PassPurchaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = PassPurchase
-        fields = "__all__"
+        fields = [
+            'stripe_product_id', 'stripe_customer_id', 'pass_name', 'is_subscription', 'active',
+            'start_date', 'end_date'
+        ]

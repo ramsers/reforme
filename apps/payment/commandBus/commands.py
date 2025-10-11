@@ -7,6 +7,7 @@ class CreatePurchaseIntentCommand(typing.NamedTuple):
     is_subscription: bool
     price_amount: int
     currency: str
+    duration_days: int
 
 
 class CreatePassPurchaseCommand(typing.NamedTuple):
@@ -17,6 +18,7 @@ class CreatePassPurchaseCommand(typing.NamedTuple):
     is_subscription: bool
     active: bool
     stripe_product_id: str
+    duration_days: int
     stripe_payment_intent: str | None = None
     stripe_checkout_id: str | None = None
     stripe_customer_id: str | None = None

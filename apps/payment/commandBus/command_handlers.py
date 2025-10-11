@@ -3,6 +3,10 @@ from apps.user.models import User
 import stripe
 import os
 from apps.payment.models import PassPurchase
+from apps.payment.events.event_dispatchers import payment_event_dispatcher
+from apps.payment.events.events import PaymentSuccessEvent
+from datetime import timedelta
+from django.utils import timezone
 
 
 def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
@@ -22,7 +26,8 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
             metadata={
                 "user_id": user.id,
                 "product_name": command.product_name,
-                "price_id": command.price_id
+                "price_id": command.price_id,
+                "duration_days": command.duration_days,
             },
         )
         print('CHECKING THE SESSION ==============', checkout_session, flush=True)
@@ -34,16 +39,28 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
             amount=int(command.price_amount * 100),
             currency=command.currency,
             automatic_payment_methods={"enabled": True},
-            metadata={"user_id": user.id, "product_name": command.product_name, "price_id": command.price_id},
+            metadata={
+                "user_id": user.id,
+                "product_name": command.product_name,
+                "price_id": command.price_id,
+                "duration_days": command.duration_days,
+            },
         )
 
         return payment_intent.client_secret
 
 def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
-    print('COMMAND USER ID BRO =====================', command.user_id, flush=True)
     user = User.objects.get(id=command.user_id)
 
     pass_purchase = None
+
+    duration_days = int(command.duration_days)
+
+    # Compute start and end dates
+    start_date = timezone.now()
+    end_date = start_date + timedelta(days=duration_days) if duration_days > 0 else None
+
+    print('COMMAND USER ID BRO =====================', end_date, flush=True)
 
     if command.is_subscription:
         pass_purchase = PassPurchase.objects.create(
@@ -54,6 +71,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
             pass_name=command.product_name,
             is_subscription=command.is_subscription,
             active=command.active,
+            end_date=end_date,
         )
     else:
         pass_purchase = PassPurchase.objects.create(
@@ -64,6 +82,11 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
             stripe_price_id=command.stripe_price_id,
             is_subscription=command.is_subscription,
             active=command.active,
+            end_date=end_date,
         )
+
+    event = PaymentSuccessEvent(user_id=user.id, product_name=command.product_name)
+    payment_event_dispatcher.dispatch(event)
+
 
     return pass_purchase

@@ -1,0 +1,7 @@
+from apps.core.dispatcher import EventDispatcher
+from apps.payment.events.events import PaymentSuccessEvent
+from apps.payment.events.event_handlers import send_payment_success_email
+from apps.authentication.events.event_handlers import handle_send_sign_up_email
+
+payment_event_dispatcher = EventDispatcher()
+payment_event_dispatcher.add_handler(PaymentSuccessEvent, send_payment_success_email)

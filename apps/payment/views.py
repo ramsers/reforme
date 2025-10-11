@@ -42,6 +42,7 @@ class ListProductApi(APIView):
                 "price_amount": price.unit_amount / 100 if price else None,
                 "currency": price.currency if price else None,
                 "is_subscription": price.recurring is not None,
+                "duration_days": product.metadata.duration_days,
             })
 
 
@@ -67,7 +68,7 @@ class StripeWebhookAPI(APIView):
 
         metadata = object_data.get("metadata", {})  # metadata dict
         is_subscription = event["type"] == "checkout.session.completed"
-        # print('HITTING HERE =======================', object_data, flush=True)
+        print('HITTING HERE =======================', object_data, flush=True)
 
 
         if event['type'] == 'payment_intent.succeeded' or event['type'] == 'checkout.session.completed':
@@ -81,6 +82,7 @@ class StripeWebhookAPI(APIView):
                 stripe_price_id=metadata.get("price_id"),
                 stripe_product_id=metadata.get("product_id"),
                 stripe_customer_id=object_data.get("customer") if is_subscription else None,
+                duration_days= metadata.get("duration_days"),
                 active=True
             )
 
