@@ -17,10 +17,10 @@ class ProductSerializer(serializers.Serializer):
 
 
 class PassPurchaseSerializer(serializers.ModelSerializer):
-    is_active = serializers.SerializerMethodField()  # use computed property
-
-    def get_is_active(self, obj):
-        return obj.is_active
+    # is_active = serializers.SerializerMethodField()  # use computed property
+    #
+    # def get_is_active(self, obj):
+    #     return obj.active
 
     class Meta:
         model = PassPurchase

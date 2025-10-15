@@ -1,6 +1,6 @@
 from apps.booking.commandBus.commands import CreateBookingCommand, DeleteBookingCommand
 from apps.booking.models import Booking
-from apps.booking.events.events import CreateBookingEvent
+from apps.booking.events.events import CreateBookingEvent, DeleteBookingEvent
 from apps.booking.events.event_dispatchers import booking_event_dispatcher
 
 
@@ -17,5 +17,11 @@ def handle_create_booking(command: CreateBookingCommand):
 
 
 def handle_delete_booking(command: DeleteBookingCommand):
+    print('HITTNG COMMAND ====================', flush=True)
+
     booking: Booking = Booking.objects.get(id=command.booking_id)
+
+    event = DeleteBookingEvent(booking_id=booking.id)
+    booking_event_dispatcher.dispatch(event)
+
     booking.delete()

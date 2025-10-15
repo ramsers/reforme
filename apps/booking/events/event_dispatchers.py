@@ -1,6 +1,7 @@
 from apps.core.dispatcher import EventDispatcher
-from apps.booking.events.events import CreateBookingEvent
-from .event_handlers import handle_send_create_booking_email
+from apps.booking.events.events import CreateBookingEvent, DeleteBookingEvent
+from .event_handlers import handle_send_create_booking_email, handle_send_delete_booking_email
 
 booking_event_dispatcher = EventDispatcher()
 booking_event_dispatcher.add_handler(CreateBookingEvent, handle_send_create_booking_email)
+booking_event_dispatcher.add_handler(DeleteBookingEvent, handle_send_delete_booking_email)
