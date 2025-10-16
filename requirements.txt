@@ -8,3 +8,7 @@ django-filter==25.1
 django-rq==3.1
 sendgrid-django
 stripe>=10.0.0
+celery>=5.4
+redis>=5.0
+python-dateutil>=2.9
+
