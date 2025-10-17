@@ -22,6 +22,13 @@ class Classes(TimestampModel, UUIDModel):
         null=True,
         help_text="List of weekdays for weekly recurrence, e.g., [0, 2] for Mon & Wed"
     )
+    parent_class = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        related_name="child_classes",
+        on_delete=models.CASCADE
+    )
 
     class Meta:
         db_table = "classes"

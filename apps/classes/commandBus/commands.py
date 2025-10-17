@@ -2,6 +2,7 @@ import typing
 from typing import Optional
 from apps.user.models import User
 from datetime import timedelta, datetime
+from typing import List, Optional
 
 
 class CreateClassCommand(typing.NamedTuple):
@@ -10,6 +11,8 @@ class CreateClassCommand(typing.NamedTuple):
     size: int
     date: datetime
     instructor_id: str | None = None
+    recurrence_type: Optional[str] = None
+    recurrence_days: Optional[List[int]] = None
 
 
 class PartialUpdateClassCommand(typing.NamedTuple):
@@ -18,3 +21,6 @@ class PartialUpdateClassCommand(typing.NamedTuple):
     description: str | None = None
     size: int | None = None
     date: datetime | None = None
+    instructor_id: str | None = None
+    recurrence_type: Optional[str] = None
+    recurrence_days: Optional[List[int]] = None
