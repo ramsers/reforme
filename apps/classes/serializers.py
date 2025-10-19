@@ -12,23 +12,8 @@ class ClassesSerializer(serializers.ModelSerializer):
     is_full = serializers.SerializerMethodField()
     bookings = BookingClientSerializer(source="bookings.all", many=True, read_only=True)
 
-    # def get_instructor(self, obj):
-    #     try:
-    #         return UserSerializer(obj.instructor).data if obj.instructor else None
-    #     except ObjectDoesNotExist:
-    #         return None
-    #
-    # def get_bookings_count(self, obj):
-    #     return obj.bookings.count()
-    #
     def get_is_full(self, obj):
         return obj.bookings.count() >= int(obj.size)
-
-    # def get_bookings(self, obj):
-    #     try:
-    #         return BookingClientSerializer(obj.bookings.all(), many=True, default=[]).data
-    #     except ObjectDoesNotExist:
-    #         return None
 
     class Meta:
         model = Classes
@@ -43,4 +28,6 @@ class ClassesSerializer(serializers.ModelSerializer):
             "bookings_count",
             "is_full",
             "bookings",
+            "recurrence_type",
+            "recurrence_days",
         ]

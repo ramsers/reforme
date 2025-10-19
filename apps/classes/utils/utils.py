@@ -73,8 +73,8 @@ def _generate_recurring_classes(base_class: Classes, count: int = 10):
                         size=base_class.size,
                         date=next_date,
                         instructor=base_class.instructor,
-                        recurrence_type=rec_type,
-                        recurrence_days=rec_days,
+                        recurrence_type=None,
+                        recurrence_days=None,
                         parent_class=base_class,  # ✅ link to root
                     )
                 )

@@ -63,6 +63,7 @@ class ClassesViewSet(viewsets.ModelViewSet):
             date=validator.validated_data.get('date'),
             recurrence_type=validator.validated_data.get('recurrence_type'),
             recurrence_days=validator.validated_data.get('recurrence_days'),
+            update_series=request.data.get('update_series'),
         )
 
         updated_class = classes_command_bus.handle(command)
