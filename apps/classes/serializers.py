@@ -30,4 +30,5 @@ class ClassesSerializer(serializers.ModelSerializer):
             "bookings",
             "recurrence_type",
             "recurrence_days",
+            "parent_class_id"
         ]

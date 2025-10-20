@@ -25,3 +25,9 @@ class PartialUpdateClassCommand(typing.NamedTuple):
     recurrence_type: Optional[str] = None
     recurrence_days: Optional[List[int]] = None
     update_series: bool = False
+
+
+class DeleteClassCommand(typing.NamedTuple):
+    id: str
+    delete_series: bool = False
+

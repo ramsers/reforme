@@ -5,7 +5,7 @@ from apps.classes.decorators import is_instructor, is_admin
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from apps.classes.validators import CreateClassesValidator, PartialUpdateClassesValidator
-from apps.classes.commandBus.commands import CreateClassCommand, PartialUpdateClassCommand
+from apps.classes.commandBus.commands import CreateClassCommand, PartialUpdateClassCommand, DeleteClassCommand
 from apps.classes.commandBus.command_bus import classes_command_bus
 from rest_framework.permissions import IsAuthenticated
 from apps.classes.filter.classes_filter import ClassesFilter
@@ -69,3 +69,14 @@ class ClassesViewSet(viewsets.ModelViewSet):
         updated_class = classes_command_bus.handle(command)
         serializer = ClassesSerializer(updated_class)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+    @action(detail=True, methods=["delete"], url_path="delete")
+    def delete(self, request, *args, **kwargs):
+        print('HITTNG VIEW ====================', flush=True)
+
+
+        command = DeleteClassCommand(id=self.kwargs.get('pk'), delete_series=request.data.get('delete_series'),)
+        classes_command_bus.handle(command)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

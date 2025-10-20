@@ -1,9 +1,9 @@
-from apps.classes.commandBus.commands import CreateClassCommand, PartialUpdateClassCommand
+from apps.classes.commandBus.commands import CreateClassCommand, PartialUpdateClassCommand, DeleteClassCommand
 from apps.classes.models import Classes
 from apps.classes.utils.utils import _generate_recurring_classes
 from django.utils import timezone
 import copy
-
+from django.db.models import Q
 
 
 def handle_create_class(command: CreateClassCommand):
@@ -121,3 +121,15 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
 
     return class_to_update
 
+
+def handle_delete_class(command: DeleteClassCommand):
+    class_to_delete = Classes.objects.get(id=command.id)
+
+    if command.delete_series:
+        Classes.objects.filter(
+            Q(parent_class=root_class) | Q(id=root_class.id),
+            date__gte=class_to_delete.date
+        ).delete()
+
+    else:
+        class_to_delete.delete()
