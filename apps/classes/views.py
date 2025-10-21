@@ -74,9 +74,11 @@ class ClassesViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["delete"], url_path="delete")
     def delete(self, request, *args, **kwargs):
         print('HITTNG VIEW ====================', flush=True)
+        print('HITTNG COMMAND ======= ====================', flush=True)
 
 
-        command = DeleteClassCommand(id=self.kwargs.get('pk'), delete_series=request.data.get('delete_series'),)
+        command = DeleteClassCommand(id=self.kwargs.get('pk'),
+                                     delete_series=request.GET.get('delete_series') == 'true')
         classes_command_bus.handle(command)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
