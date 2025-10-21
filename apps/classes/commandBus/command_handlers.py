@@ -32,26 +32,9 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
     old_recurrence_days = class_to_update.recurrence_days or []
     old_date = class_to_update.date
     root_class = class_to_update.parent_class or class_to_update
-    fields_to_update = {}
+    fields_to_update = _collect_field_updates(command)
 
-    # --- Detect and store changes ---
-    if command.title is not None:
-        fields_to_update['title'] = command.title
-    if command.description is not None:
-        fields_to_update['description'] = command.description
-    if command.size is not None:
-        fields_to_update['size'] = command.size
-    if command.date is not None:
-        fields_to_update['date'] = command.date
-    if command.recurrence_type is not None:
-        fields_to_update['recurrence_type'] = command.recurrence_type
-    if command.recurrence_days is not None:
-        new_days = sorted(set(command.recurrence_days))
-        root_class.recurrence_days = new_days
-        class_to_update.recurrence_days = new_days
-        fields_to_update['recurrence_days'] = new_days
-        fields_to_update['recurrence_days'] = new_days
-    # --- Apply updates to both base and root classes ---
+    # Apply updates
     for field, value in fields_to_update.items():
         setattr(class_to_update, field, value)
         if field in ['recurrence_type', 'recurrence_days']:
@@ -60,58 +43,27 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
     class_to_update.save()
     root_class.save()
 
-    # --- If not updating series, stop here ---
+    # --- Case 1: only single class updated ---
     if not command.update_series:
+        _emit_reschedule_event(class_to_update, update_series=False)
         return class_to_update
 
-    # --- Determine what changed ---
-    recurrence_changed = (
-        command.recurrence_type is not None
-        and old_recurrence_type != command.recurrence_type
-    ) or (
-        command.recurrence_days is not None
-        and old_recurrence_days != command.recurrence_days
-    )
+    # --- Case 2: update entire series ---
+    recurrence_changed = _recurrence_changed(command, old_recurrence_type, old_recurrence_days)
+    date_changed, time_changed = _detect_datetime_change(fields_to_update, old_date)
 
-    date_changed = False
-    time_changed = False
-    if 'date' in fields_to_update:
-        new_datetime = fields_to_update['date']
-        date_changed = new_datetime.date() != old_date.date()
-        time_changed = new_datetime.time() != old_date.time()
-
-    # --- Handle recurrence structure changes first ---
     if recurrence_changed:
-        Classes.objects.filter(
-            parent_class=root_class,
-            date__gt=class_to_update.date
-        ).delete()
-        _generate_recurring_classes(root_class)
+        _regenerate_future_classes(root_class, class_to_update)
+        _emit_reschedule_event(root_class, update_series=True)
         return class_to_update
 
-    # --- Handle date/time changes ---
     if time_changed and not date_changed:
-        future_classes = Classes.objects.filter(
-            parent_class=root_class,
-            date__gte=class_to_update.date
-        )
-        for c in future_classes:
-            c.date = c.date.replace(
-                hour=new_datetime.hour,
-                minute=new_datetime.minute,
-                second=new_datetime.second,
-                microsecond=new_datetime.microsecond,
-            )
-        Classes.objects.bulk_update(future_classes, ['date'])
+        _shift_future_class_times(root_class, class_to_update, fields_to_update['date'])
 
     elif date_changed:
-        Classes.objects.filter(
-            parent_class=root_class,
-            date__gt=class_to_update.date
-        ).delete()
-        _generate_recurring_classes(root_class)
+        _regenerate_future_classes(root_class, class_to_update)
 
-    # --- Propagate non-date changes (title, size, description) ---
+    # Propagate non-date fields
     non_date_fields = {k: v for k, v in fields_to_update.items() if k not in ['date', 'recurrence_type', 'recurrence_days']}
     if non_date_fields:
         Classes.objects.filter(
@@ -119,15 +71,13 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
             date__gte=class_to_update.date
         ).update(**non_date_fields)
 
+    _emit_reschedule_event(root_class, update_series=True)
     return class_to_update
 
 
 def handle_delete_class(command: DeleteClassCommand):
     class_to_delete = Classes.objects.get(id=command.id)
     root_class = class_to_delete.parent_class or class_to_delete
-
-    print('TEST ROOT CLASS ===============', root_class, flush=True)
-    print('TEST ROOT COMMAND ======== ===============', command.delete_series, flush=True)
 
     if command.delete_series:
         Classes.objects.filter(
@@ -136,3 +86,74 @@ def handle_delete_class(command: DeleteClassCommand):
             ).delete()
     else:
         class_to_delete.delete()
+
+
+def _collect_field_updates(command):
+    fields = {}
+
+    if command.title is not None:
+        fields['title'] = command.title
+    if command.description is not None:
+        fields['description'] = command.description
+    if command.size is not None:
+        fields['size'] = command.size
+    if command.date is not None:
+        fields['date'] = command.date
+    if command.recurrence_type is not None:
+        fields['recurrence_type'] = command.recurrence_type
+    if command.recurrence_days is not None:
+        fields['recurrence_days'] = sorted(set(command.recurrence_days))
+    return fields
+
+
+def _recurrence_changed(command, old_type, old_days):
+    return (
+        (command.recurrence_type is not None and old_type != command.recurrence_type)
+        or (command.recurrence_days is not None and old_days != command.recurrence_days)
+    )
+
+
+def _detect_datetime_change(fields_to_update, old_date):
+    if 'date' not in fields_to_update:
+        return False, False
+    new_date = fields_to_update['date']
+    return new_date.date() != old_date.date(), new_date.time() != old_date.time()
+
+
+def _regenerate_future_classes(root_class, class_to_update):
+    from apps.classes.utils import _generate_recurring_classes
+    from django.db.models import Q
+
+    Classes.objects.filter(
+        Q(parent_class=root_class) | Q(id=root_class.id),
+        date__gt=class_to_update.date
+    ).delete()
+    _generate_recurring_classes(root_class)
+
+
+def _shift_future_class_times(root_class, class_to_update, new_datetime):
+    future_classes = Classes.objects.filter(
+        parent_class=root_class,
+        date__gte=class_to_update.date
+    )
+    for c in future_classes:
+        c.date = c.date.replace(
+            hour=new_datetime.hour,
+            minute=new_datetime.minute,
+            second=new_datetime.second,
+            microsecond=new_datetime.microsecond,
+        )
+    Classes.objects.bulk_update(future_classes, ['date'])
+
+
+def _emit_reschedule_event(cls, update_series: bool):
+    from apps.classes.events import RescheduleClassEvent
+    from apps.classes.event_dispatcher import event_dispatcher
+
+    event = RescheduleClassEvent(
+        class_id=str(cls.id),
+        update_series=update_series,
+        new_date=cls.date,
+    )
+    event_dispatcher.dispatch(event)
+
