@@ -4,6 +4,9 @@ from apps.classes.utils.utils import _generate_recurring_classes
 from django.utils import timezone
 import copy
 from django.db.models import Q
+from apps.classes.events.events import RescheduleClassEvent
+from apps.classes.events.event_dispatchers import class_event_dispatcher
+import datetime
 
 
 def handle_create_class(command: CreateClassCommand):
@@ -45,6 +48,9 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
 
     # --- Case 1: only single class updated ---
     if not command.update_series:
+        print('HITTING UPDATE SINGLE CLASS ===================', command, flush=True)
+        class_to_update.update_series = True
+        class_to_update.save()
         _emit_reschedule_event(class_to_update, update_series=False)
         return class_to_update
 
@@ -143,17 +149,23 @@ def _shift_future_class_times(root_class, class_to_update, new_datetime):
             second=new_datetime.second,
             microsecond=new_datetime.microsecond,
         )
+        print('TEST CCCCCC ===================', future_classes, flush=True)
     Classes.objects.bulk_update(future_classes, ['date'])
+
+    event = RescheduleClassEvent(
+        class_id=str(root_class.id),
+        update_series=True,
+        new_date=new_datetime,
+        # reason="time_changed"
+    )
+    class_event_dispatcher.dispatch(event)
 
 
 def _emit_reschedule_event(cls, update_series: bool):
-    from apps.classes.events import RescheduleClassEvent
-    from apps.classes.event_dispatcher import event_dispatcher
-
     event = RescheduleClassEvent(
         class_id=str(cls.id),
         update_series=update_series,
         new_date=cls.date,
     )
-    event_dispatcher.dispatch(event)
+    class_event_dispatcher.dispatch(event)
 

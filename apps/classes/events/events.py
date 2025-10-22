@@ -1,4 +1,6 @@
 import typing
+import datetime
+
 
 class RescheduleClassEvent(typing.NamedTuple):
     class_id: str

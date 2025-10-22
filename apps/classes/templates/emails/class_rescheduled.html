@@ -1,0 +1,8 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+  <h2>Class rescheduled!</h2>
+  <p>Your booking for class <strong>{{ class_name }}</strong> with <strong>{{ instructor_name }}</strong> has been rescheduled
+      for <strong>{{ class_date }}</strong>.</p>
+  <p>We’ll see you soon 💪</p>
+{% endblock %}
