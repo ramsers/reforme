@@ -5,7 +5,7 @@ from apps.classes.models import Classes
 from django.utils import timezone
 
 
-def _generate_recurring_classes(base_class: Classes, count: int = 10):
+def __generate_recurring_classes(base_class: Classes, count: int = 10):
     """
     Generate a series of future class instances based on recurrence settings.
     Does not duplicate the base instance.

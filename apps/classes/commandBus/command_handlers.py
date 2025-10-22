@@ -1,6 +1,6 @@
 from apps.classes.commandBus.commands import CreateClassCommand, PartialUpdateClassCommand, DeleteClassCommand
 from apps.classes.models import Classes
-from apps.classes.utils.utils import _generate_recurring_classes
+from apps.classes.utils.utils import __generate_recurring_classes
 from django.utils import timezone
 import copy
 from django.db.models import Q
@@ -23,7 +23,7 @@ def handle_create_class(command: CreateClassCommand):
     new_class.save()
 
     if command.recurrence_type:
-        _generate_recurring_classes(new_class)
+        __generate_recurring_classes(new_class)
 
 
     return new_class
@@ -127,14 +127,12 @@ def _detect_datetime_change(fields_to_update, old_date):
 
 
 def _regenerate_future_classes(root_class, class_to_update):
-    from apps.classes.utils import _generate_recurring_classes
-    from django.db.models import Q
 
     Classes.objects.filter(
         Q(parent_class=root_class) | Q(id=root_class.id),
         date__gt=class_to_update.date
     ).delete()
-    _generate_recurring_classes(root_class)
+    __generate_recurring_classes(root_class)
 
 
 def _shift_future_class_times(root_class, class_to_update, new_datetime):

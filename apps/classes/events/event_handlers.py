@@ -30,7 +30,7 @@ def handle_class_rescheduled_event(event):
     # Build message
     if event.update_series:
         subject = "Class schedule updated"
-        template_name = "emails/class_recurrence_changed.html"
+        template_name = "emails/class_rescheduled.html"
         context = {
             "class_name": cls.title,
             "message": (
