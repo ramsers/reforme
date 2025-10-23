@@ -7,24 +7,34 @@ from django.db.models import Q
 from apps.classes.events.events import RescheduleClassEvent
 from apps.classes.events.event_dispatchers import class_event_dispatcher
 import datetime
+from datetime import timedelta
+
 
 
 def handle_create_class(command: CreateClassCommand):
-    new_class = Classes(
+    start_date = command.date
+    recurrence_type = command.recurrence_type
+    recurrence_days = command.recurrence_days or []
+
+    # ✅ Align the first instance to the next valid day for WEEKLY recurrence
+    if recurrence_type == "WEEKLY" and recurrence_days:
+        weekday = start_date.weekday()
+        if weekday not in recurrence_days:
+            days_until_next = min((d - weekday) % 7 for d in recurrence_days)
+            start_date += timedelta(days=days_until_next)
+
+    new_class = Classes.objects.create(
         title=command.title,
         description=command.description,
         size=command.size,
-        date=command.date,
+        date=start_date,
         instructor_id=command.instructor_id,
-        recurrence_type=command.recurrence_type,
-        recurrence_days=command.recurrence_days
+        recurrence_type=recurrence_type,
+        recurrence_days=recurrence_days,
     )
 
-    new_class.save()
-
-    if command.recurrence_type:
+    if recurrence_type:
         __generate_recurring_classes(new_class)
-
 
     return new_class
 
@@ -48,9 +58,6 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
 
     # --- Case 1: only single class updated ---
     if not command.update_series:
-        print('HITTING UPDATE SINGLE CLASS ===================', command, flush=True)
-        class_to_update.update_series = True
-        class_to_update.save()
         _emit_reschedule_event(class_to_update, update_series=False)
         return class_to_update
 
@@ -58,9 +65,11 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
     recurrence_changed = _recurrence_changed(command, old_recurrence_type, old_recurrence_days)
     date_changed, time_changed = _detect_datetime_change(fields_to_update, old_date)
 
+    print('TEST =================', recurrence_changed, flush=True)
+
     if recurrence_changed:
+        _emit_reschedule_event(root_class, update_series=True, recurrence_changed=recurrence_changed)
         _regenerate_future_classes(root_class, class_to_update)
-        _emit_reschedule_event(root_class, update_series=True)
         return class_to_update
 
     if time_changed and not date_changed:
@@ -113,6 +122,8 @@ def _collect_field_updates(command):
 
 
 def _recurrence_changed(command, old_type, old_days):
+    print('RECURRENCE STUFF =================', command, old_type, old_days, flush=True)
+
     return (
         (command.recurrence_type is not None and old_type != command.recurrence_type)
         or (command.recurrence_days is not None and old_days != command.recurrence_days)
@@ -127,7 +138,6 @@ def _detect_datetime_change(fields_to_update, old_date):
 
 
 def _regenerate_future_classes(root_class, class_to_update):
-
     Classes.objects.filter(
         Q(parent_class=root_class) | Q(id=root_class.id),
         date__gt=class_to_update.date
@@ -150,20 +160,21 @@ def _shift_future_class_times(root_class, class_to_update, new_datetime):
         print('TEST CCCCCC ===================', future_classes, flush=True)
     Classes.objects.bulk_update(future_classes, ['date'])
 
-    event = RescheduleClassEvent(
-        class_id=str(root_class.id),
-        update_series=True,
-        new_date=new_datetime,
-        # reason="time_changed"
-    )
-    class_event_dispatcher.dispatch(event)
+    # event = RescheduleClassEvent(
+    #     class_id=str(root_class.id),
+    #     update_series=True,
+    #     new_date=new_datetime,
+    #     # reason="time_changed"
+    # )
+    # class_event_dispatcher.dispatch(event)
 
 
-def _emit_reschedule_event(cls, update_series: bool):
+def _emit_reschedule_event(cls, update_series: bool, recurrence_changed=False):
     event = RescheduleClassEvent(
         class_id=str(cls.id),
         update_series=update_series,
         new_date=cls.date,
+        recurrence_changed=recurrence_changed,
     )
     class_event_dispatcher.dispatch(event)
 

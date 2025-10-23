@@ -1,8 +1,9 @@
 from django.db.models import Q
 from apps.classes.models import Classes
-from apps.core.email_service import send_html_email  # your HTML mail helper
+from apps.core.email_service import send_html_email
+from apps.classes.events.events import RescheduleClassEvent
 
-def handle_class_rescheduled_event(event):
+def handle_class_rescheduled_event(event: RescheduleClassEvent):
     """
     Send HTML emails to all booked users + instructor when a class changes.
     - If event.update_series is False: notify for this single class (with new date).
@@ -20,17 +21,23 @@ def handle_class_rescheduled_event(event):
     # Collect recipients
     emails = set()
     for c in affected_classes:
+        print('AFFECTED CLASSES ============================', c, flush=True)
         emails.update(c.bookings.values_list("client__email", flat=True))
     if cls.instructor and cls.instructor.email:
         emails.add(cls.instructor.email)
+
+    print('EMAIL =====================', emails, flush=True)
 
     if not emails:
         return
 
     # Build message
-    if event.update_series:
+    if event.recurrence_changed:
+
+        print('event.recurrence_changed =====================', event.recurrence_changed, flush=True)
+
         subject = "Class schedule updated"
-        template_name = "emails/class_rescheduled.html"
+        template_name = "emails/class_removed.html"
         context = {
             "class_name": cls.title,
             "message": (
