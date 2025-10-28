@@ -37,9 +37,10 @@ class UpdateUserValidator(serializers.Serializer):
 
     def validate(self, attrs):
         email = attrs.get("email")
-        if email:
-            user = self.context.get("user")
-            if User.objects.exclude(id=user.id).filter(email=email).exists():
-                raise serializers.ValidationError("This email is already in use.")
+        target_user = getattr(self, "instance", None)
+
+        if email and target_user and email != target_user.email:
+            if User.objects.filter(email=email).exists():
+                raise serializers.ValidationError({"email": "This email is already in use."})
 
         return attrs

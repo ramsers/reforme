@@ -41,7 +41,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
     def partial_update(self, request, *args, **kwargs):
-        print('hittin patch')
+        print('HITTING PATCH =======================', flush=True)
         validator = UpdateUserValidator(data={"id": self.kwargs.get('pk'), **request.data},
                                         context={"user": request.user})
         validator.is_valid(raise_exception=True)
