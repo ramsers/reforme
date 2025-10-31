@@ -21,7 +21,7 @@ from apps.user.views import UserViewSet
 from apps.authentication.views import SignUpAPI, LoginAPI
 from apps.classes.views import ClassesViewSet
 from apps.booking.views import BookingViewSet
-from apps.payment.views import CreatePurchaseIntentApi, ListProductApi, StripeWebhookAPI
+from apps.payment.views import CreatePurchaseIntentApi, ListProductApi, StripeWebhookApi, CancelSubscriptionApi
 
 
 authentication_patterns = [
@@ -32,7 +32,8 @@ authentication_patterns = [
 payment_patterns = [
     path('create-purchase-intent', CreatePurchaseIntentApi.as_view(), name="create-purchase-intent"),
     path('products', ListProductApi.as_view(), name="products"),
-    path('webhook', StripeWebhookAPI.as_view(), name="webhook"),
+    path('webhook', StripeWebhookApi.as_view(), name="webhook"),
+    path("subscription/<uuid:pk>/cancel", CancelSubscriptionApi.as_view(), name="cancel-subscription"),
 ]
 
 

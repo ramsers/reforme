@@ -17,14 +17,10 @@ class ProductSerializer(serializers.Serializer):
 
 
 class PassPurchaseSerializer(serializers.ModelSerializer):
-    # is_active = serializers.SerializerMethodField()  # use computed property
-    #
-    # def get_is_active(self, obj):
-    #     return obj.active
-
     class Meta:
         model = PassPurchase
         fields = [
+            'id',
             'stripe_product_id', 'stripe_customer_id', 'pass_name', 'is_subscription', 'is_active',
-            'start_date', 'end_date'
+            'start_date', 'end_date', 'is_cancel_requested'
         ]

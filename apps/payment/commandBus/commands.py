@@ -22,3 +22,5 @@ class CreatePassPurchaseCommand(typing.NamedTuple):
     stripe_payment_intent: str | None = None
     stripe_checkout_id: str | None = None
     stripe_customer_id: str | None = None
+    stripe_subscription_id: str | None = None
+

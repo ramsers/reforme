@@ -70,6 +70,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
             stripe_price_id=command.stripe_price_id,
             pass_name=command.product_name,
             is_subscription=command.is_subscription,
+            stripe_subscription_id=command.stripe_subscription_id,
             active=command.active,
             end_date=end_date,
         )

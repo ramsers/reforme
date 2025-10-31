@@ -49,7 +49,30 @@ class ListProductApi(APIView):
         return Response(data=result, status=status.HTTP_200_OK)
 
 
-class StripeWebhookAPI(APIView):
+class CancelSubscriptionApi(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            purchase = PassPurchase.objects.get(id=pk)
+
+            stripe.Subscription.modify(
+                purchase.stripe_subscription_id,
+                cancel_at_period_end=True,
+            )
+
+            purchase.is_cancel_requested = True
+            purchase.save(update_fields=["is_cancel_requested"])
+
+            return Response({"message": "Subscription set to cancel at period end."}, status=status.HTTP_200_OK)
+
+        except PassPurchase.DoesNotExist:
+            return Response({"error": "Purchase not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StripeWebhookApi(APIView):
     def post(self, request):
         payload = request.body
         signature_header = request.META.get('HTTP_STRIPE_SIGNATURE')
@@ -68,29 +91,47 @@ class StripeWebhookAPI(APIView):
 
         metadata = object_data.get("metadata", {})  # metadata dict
         is_subscription = event["type"] == "checkout.session.completed"
-        print('HITTING HERE =======================', object_data, flush=True)
-
+        subscription_id = object_data.get("subscription") if is_subscription else None
 
         if event['type'] == 'payment_intent.succeeded' or event['type'] == 'checkout.session.completed':
-            print('HITTING INTO CREATE PASS COMMAND ==============================', metadata, flush=True)
-            command = CreatePassPurchaseCommand(
-                user_id=metadata.get("user_id"),
-                product_name=metadata.get("product_name"),
-                is_subscription=is_subscription,
-                stripe_checkout_id=object_data["id"] if is_subscription else None,
-                stripe_payment_intent=object_data["id"] if not is_subscription else None,
-                stripe_price_id=metadata.get("price_id"),
-                stripe_product_id=metadata.get("product_id"),
-                stripe_customer_id=object_data.get("customer") if is_subscription else None,
-                duration_days= metadata.get("duration_days"),
-                active=True
-            )
+            if metadata:
+                command = CreatePassPurchaseCommand(
+                    user_id=metadata.get("user_id"),
+                    product_name=metadata.get("product_name"),
+                    is_subscription=is_subscription,
+                    stripe_checkout_id=object_data["id"] if is_subscription else None,
+                    stripe_payment_intent=object_data["id"] if not is_subscription else None,
+                    stripe_price_id=metadata.get("price_id"),
+                    stripe_product_id=metadata.get("product_id"),
+                    stripe_customer_id=object_data.get("customer") if is_subscription else None,
+                    stripe_subscription_id=subscription_id,
+                    duration_days= metadata.get("duration_days"),
+                    active=True
+                )
 
-            pass_purchase = payment_command_bus.handle(command)
-            serializer = PassPurchaseSerializer(pass_purchase)
+                pass_purchase = payment_command_bus.handle(command)
+                serializer = PassPurchaseSerializer(pass_purchase)
 
-            print('SERIALIZER =============', serializer.data, flush=True)
+                return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        if event['type'] in ("customer.subscription.updated", "customer.subscription.deleted"):
+            subscription_id = object_data.get("subscription")
+            status_stripe = object_data.get("status")
+            cancel_at_period_end = object_data.get("cancel_at_period_end", False)
+
+            try:
+                purchase = PassPurchase.objects.filter(stripe_subscription_id=subscription_id).first()
+                if purchase:
+                    if purchase:
+                        if cancel_at_period_end and not purchase.is_cancel_requested:
+                            purchase.is_cancel_requested = True
+
+                        if status_stripe == "canceled":
+                            purchase.is_active = False
+                            purchase.is_cancel_requested = False
+
+                        purchase.save(update_fields=["is_active", "is_cancel_requested"])
+            except Exception as e:
+                print("❌ Error updating subscription status:", e, flush=True)
 
         return Response(status=status.HTTP_200_OK)

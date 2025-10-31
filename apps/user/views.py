@@ -52,15 +52,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response(data=UserSerializer(updated_user).data, status=status.HTTP_200_OK)
 
-    # def patch(self, request, *args, **kwargs):
-    #     validator = UpdateUserValidator(data={**request.data}, context={"user": request.user})
-    #     validator.is_valid(raise_exception=True)
-    #
-    #     command = UpdateUserCommand(**validator.validated_data)
-    #     user = user_command_bus.handle(command)
-    #
-    #     return Response(data=UserSerializer(user).data, status=status.HTTP_200_OK)
-
     @action(detail=False, methods=["get"])
     def me(self, request, *args, **kwargs):
         user = request.user
