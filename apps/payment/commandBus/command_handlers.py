@@ -1,4 +1,5 @@
-from apps.payment.commandBus.commands import CreatePurchaseIntentCommand, CreatePassPurchaseCommand
+from apps.payment.commandBus.commands import (CreatePurchaseIntentCommand, CreatePassPurchaseCommand,
+                                              CancelSubscriptionWebhookCommand, CancelSubscriptionCommand)
 from apps.user.models import User
 import stripe
 import os
@@ -7,7 +8,7 @@ from apps.payment.events.event_dispatchers import payment_event_dispatcher
 from apps.payment.events.events import PaymentSuccessEvent
 from datetime import timedelta
 from django.utils import timezone
-
+from apps.payment.events.events import SubscriptionCancellationEvent
 
 def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
     user = User.objects.get(id=command.user_id)
@@ -91,3 +92,38 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
 
 
     return pass_purchase
+
+def handle_cancel_subscription(command: CancelSubscriptionCommand):
+    try:
+        purchase = PassPurchase.objects.get(id=command.purchase_id)
+
+        stripe.Subscription.modify(
+            purchase.stripe_subscription_id,
+            cancel_at_period_end=True,
+        )
+
+        purchase.is_cancel_requested = True
+        purchase.save(update_fields=["is_cancel_requested"])
+
+        event = SubscriptionCancellationEvent(user_id=purchase.user.id, end_date=purchase.end_date.date())
+        payment_event_dispatcher.dispatch(event)
+    except PassPurchase.DoesNotExist:
+        print({"error": "Purchase not found."}, flush=True)
+    except Exception as e:
+        print({"error": str(e)}, flush=True)
+
+def handle_update_subscription_cancellation(command: CancelSubscriptionWebhookCommand):
+    try:
+        purchase = PassPurchase.objects.filter(stripe_subscription_id=command.subscription_id).first()
+        if purchase:
+            if command.cancel_at_period_end and not purchase.is_cancel_requested:
+                purchase.is_cancel_requested = True
+
+            if command.status_stripe == "canceled":
+                purchase.is_active = False
+                purchase.is_cancel_requested = False
+
+            purchase.save(update_fields=["is_active", "is_cancel_requested"])
+
+    except Exception as e:
+        print("❌ Error updating subscription status:", e, flush=True)

@@ -24,3 +24,12 @@ class CreatePassPurchaseCommand(typing.NamedTuple):
     stripe_customer_id: str | None = None
     stripe_subscription_id: str | None = None
 
+
+class CancelSubscriptionCommand(typing.NamedTuple):
+    purchase_id: str
+
+
+class CancelSubscriptionWebhookCommand(typing.NamedTuple):
+    subscription_id: str
+    status_stripe: str
+    cancel_at_period_end: bool

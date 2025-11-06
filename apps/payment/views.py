@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.payment.models import PassPurchase
 import json
-from apps.payment.commandBus.commands import CreatePurchaseIntentCommand
+from apps.payment.commandBus.commands import (CreatePurchaseIntentCommand, CancelSubscriptionWebhookCommand,
+                                              CancelSubscriptionCommand)
 from apps.payment.commandBus.command_bus import payment_command_bus
 from rest_framework import status
 from apps.payment.serializers import PassPurchaseSerializer
@@ -53,23 +54,10 @@ class CancelSubscriptionApi(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        try:
-            purchase = PassPurchase.objects.get(id=pk)
+        command = CancelSubscriptionCommand(purchase_id=pk)
+        payment_command_bus.handle(command)
 
-            stripe.Subscription.modify(
-                purchase.stripe_subscription_id,
-                cancel_at_period_end=True,
-            )
-
-            purchase.is_cancel_requested = True
-            purchase.save(update_fields=["is_cancel_requested"])
-
-            return Response({"message": "Subscription set to cancel at period end."}, status=status.HTTP_200_OK)
-
-        except PassPurchase.DoesNotExist:
-            return Response({"error": "Purchase not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "Subscription set to cancel at period end."}, status=status.HTTP_200_OK)
 
 
 class StripeWebhookApi(APIView):
@@ -115,22 +103,26 @@ class StripeWebhookApi(APIView):
                 return Response(data=serializer.data, status=status.HTTP_200_OK)
 
         if event['type'] in ("customer.subscription.updated", "customer.subscription.deleted"):
-            subscription_id = object_data.get("subscription")
-            status_stripe = object_data.get("status")
-            cancel_at_period_end = object_data.get("cancel_at_period_end", False)
+            command = CancelSubscriptionWebhookCommand(
+                subscription_id=object_data.get("subscription"),
+                status_stripe = object_data.get("status"),
+                cancel_at_period_end = object_data.get("cancel_at_period_end", False)
+            )
+
+            payment_command_bus.handle(command)
+
 
             try:
                 purchase = PassPurchase.objects.filter(stripe_subscription_id=subscription_id).first()
                 if purchase:
-                    if purchase:
-                        if cancel_at_period_end and not purchase.is_cancel_requested:
-                            purchase.is_cancel_requested = True
+                    if cancel_at_period_end and not purchase.is_cancel_requested:
+                        purchase.is_cancel_requested = True
 
-                        if status_stripe == "canceled":
-                            purchase.is_active = False
-                            purchase.is_cancel_requested = False
+                    if status_stripe == "canceled":
+                        purchase.is_active = False
+                        purchase.is_cancel_requested = False
 
-                        purchase.save(update_fields=["is_active", "is_cancel_requested"])
+                    purchase.save(update_fields=["is_active", "is_cancel_requested"])
             except Exception as e:
                 print("❌ Error updating subscription status:", e, flush=True)
 
