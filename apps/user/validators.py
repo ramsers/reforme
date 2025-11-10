@@ -18,6 +18,14 @@ class CreateUserValidator(serializers.Serializer):
             raise serializers.ValidationError("This email is already in use")
         return value
 
+    def validate(self, attrs):
+        user = self.context.get('user')
+
+        if user.role != Role.ADMIN:
+            raise serializers.ValidationError("not_allowed")
+
+        return attrs
+
 
 class UpdateUserValidator(serializers.Serializer):
     id = serializers.UUIDField(required=True, allow_null=False)

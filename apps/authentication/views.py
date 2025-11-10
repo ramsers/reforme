@@ -2,7 +2,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import transaction
-from apps.user.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.authentication.validators import SignUpValidator, LoginValidator
 from apps.user.commandBus.command_bus import user_command_bus
@@ -46,5 +45,5 @@ class LoginAPI(APIView):
                 "access": str(refresh.access_token),
                 "refresh": str(refresh),
             },
-            status=status.HTTP_201_CREATED,
+            status=status.HTTP_200_OK,
         )

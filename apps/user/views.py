@@ -27,26 +27,21 @@ class UserViewSet(viewsets.ModelViewSet):
     filterset_class = UserFilter
     pagination_class = UserPagination
 
+
     def create(self, request, *args, **kwargs):
         validator = CreateUserValidator(data={**request.data}, context={"user": request.user})
         validator.is_valid(raise_exception=True)
 
-        print('VALIDATOR ================', validator.validated_data, flush=True)
-
         command = CreateUserCommand(**validator.validated_data)
         user = user_command_bus.handle(command)
-
-        print('USER ======', user)
 
         return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
     def partial_update(self, request, *args, **kwargs):
-        print('HITTING PATCH =======================', flush=True)
         validator = UpdateUserValidator(data={"id": self.kwargs.get('pk'), **request.data},
                                         context={"user": request.user})
         validator.is_valid(raise_exception=True)
 
-        print('VALIDATOR =====', validator.validated_data, flush=True)
         command = UpdateUserCommand(**validator.validated_data)
         updated_user = user_command_bus.handle(command)
 
