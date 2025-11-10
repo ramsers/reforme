@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from model_bakery import baker
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.user.models import Role  # adjust this import path to your actual Role model
+from apps.classes.models import Classes
+from apps.booking.models import Booking
 
 User = get_user_model()
 
@@ -44,3 +46,31 @@ def client_client(db):
 def admin_client(db):
     client, user = create_authenticated_client(Role.ADMIN)
     return client, user
+
+@pytest.fixture
+def client_user(db):
+    return baker.make(User, role=Role.CLIENT, email="client@example.com")
+
+
+@pytest.fixture
+def instructor_user(db):
+    return baker.make(User, role=Role.INSTRUCTOR, email="instructor@example.com")
+
+
+@pytest.fixture
+def sample_class(db, instructor_user):
+    return baker.make(
+        Classes,
+        title="Morning Pilates",
+        description="A beginner pilates session.",
+        instructor=instructor_user,
+    )
+
+
+@pytest.fixture
+def sample_booking(db, client_user, sample_class):
+    return baker.make(
+        Booking,
+        client=client_user,
+        booked_class=sample_class,
+    )

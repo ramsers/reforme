@@ -3,6 +3,7 @@ from apps.user.models import User
 from apps.user.serializers import UserSerializer
 from apps.classes.models import Classes
 from apps.booking.models import Booking
+from apps.user.value_objects import Role
 
 
 
@@ -14,7 +15,7 @@ class CreateBookingValidator(serializers.Serializer):
         booker = self.context.get('booker')
         client = User.objects.get(id=value)
 
-        if client and client.id != booker.id:
+        if client.id != booker.id or booker.role == Role.ADMIN:
             raise serializers.ValidationError("not_allowed")
 
         return value
@@ -39,10 +40,12 @@ class DeleteBookingValidator(serializers.Serializer):
 
     def validate_booking_id(self, value):
         booking_to_delete = Booking.objects.get(id=value)
+        print('HITTING Validator ==============', booking_to_delete, flush=True)
+
 
         client = self.context.get('client')
 
-        if booking_to_delete.client.id != client.id:
+        if booking_to_delete.client.id != client.id and client.role != Role.ADMIN:
             raise serializers.ValidationError("not_allowed")
 
         return value

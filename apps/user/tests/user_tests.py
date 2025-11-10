@@ -2,6 +2,7 @@ from conftest import admin_client, client_client
 from apps.user.value_objects import Role
 from rest_framework import status
 from apps.user.models import User
+from rest_framework import status
 
 users_endpoint = "/users"
 
@@ -17,7 +18,7 @@ def test_create_user_successfully(admin_client):
 
     admin_response = admin.post(users_endpoint, new_user_payload, format="json")
 
-    assert admin_response.status_code == 201
+    assert admin_response.status_code == status.HTTP_201_CREATED
     assert admin_response.data["email"] == payload["email"]
     assert admin_response.data["name"] == payload["name"]
     assert admin_response.data["role"] == payload["role"]
@@ -89,7 +90,7 @@ def test_update_user_successfully(admin_client, client_client):
 
     admin_response = admin.post(f"{users_endpoint}/{client_client}", payload, format="json")
 
-    assert admin_response.status_code == 201
+    assert admin_response.status_code == status.HTTP_201_CREATED
     assert admin_response.data["email"] == new_user_payload["email"]
     assert admin_response.data["name"] == new_user_payload["name"]
     assert admin_response.data["role"] == new_user_payload["role"]

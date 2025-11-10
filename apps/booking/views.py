@@ -40,11 +40,12 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["delete"], url_path="delete")
     def delete(self, request, *args, **kwargs):
+        print('HITTING VIEW ==============', self.kwargs.get('pk'), flush=True)
         validator = DeleteBookingValidator(data={'booking_id': self.kwargs.get('pk')}, context={"client": request.user})
         validator.is_valid(raise_exception=True)
 
 
-        command = DeleteBookingCommand(booking_id=self.kwargs.get('pk'))
+        command = DeleteBookingCommand(booking_id=validator.validated_data['booking_id'])
         booking_command_bus.handle(command)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
