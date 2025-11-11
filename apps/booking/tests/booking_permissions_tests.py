@@ -1,9 +1,10 @@
 from conftest import admin_client, instructor_client, client_client, sample_class, sample_booking
 from rest_framework import status
+from apps.booking.models import Booking
 
 bookings_endpoint = "/bookings"
 
-def test_booking_create_permissions(admin_client, instructor_client, client_client, sample_class):
+def test_create_booking_permissions(admin_client, instructor_client, client_client, sample_class):
     admin, admin_user = admin_client
     instructor, instructor_user = instructor_client
     client, client_user = client_client
@@ -24,21 +25,21 @@ def test_booking_create_permissions(admin_client, instructor_client, client_clie
     assert str(client_response.data['non_field_errors'][0]) == 'already_booked'
 
 
-def test_booking_delete_permissions(admin_client, instructor_client, client_client, sample_booking):
-    delete_endpoint = f"/bookings/{sample_booking.id}/delete"
+def test_delete_booking_permissions(admin_client, instructor_client, client_client, sample_booking, sample_class):
     admin, admin_user = admin_client
     instructor, instructor_user = instructor_client
     client, client_user = client_client
 
-    admin_response = admin.delete(delete_endpoint)
-    instructor_response = instructor.delete(delete_endpoint)
-    client_response = client.delete(delete_endpoint)
+    client_booking = Booking.objects.create(client=client_user, booked_class=sample_class)
+    instructor_booking = Booking.objects.create(client=client_user, booked_class=sample_class)
+    admin_booking = Booking.objects.create(client=client_user, booked_class=sample_class)
 
-    print("Admin response:", admin_response.data, flush=True)
-    print("Instructor response:", instructor_response.status_code, flush=True)
-    print("Client response:", client_response.status_code, flush=True)
+    resp_client = client.delete(f"/bookings/{client_booking.id}/delete")
+    assert resp_client.status_code == status.HTTP_204_NO_CONTENT
 
-    assert admin_response.status_code == status.HTTP_201_CREATED
-    assert instructor_response.status_code == status.HTTP_400_BAD_REQUEST
-    assert client_response.status_code == status.HTTP_400_BAD_REQUEST
-    assert str(client_response.data['non_field_errors'][0]) == 'already_booked'
+    resp_admin = admin.delete(f"/bookings/{admin_booking.id}/delete")
+    assert resp_admin.status_code == status.HTTP_204_NO_CONTENT
+
+    resp_instructor = instructor.delete(f"/bookings/{instructor_booking.id}/delete")
+    assert resp_instructor.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp_instructor.data == {"booking_id": ["not_allowed"]}

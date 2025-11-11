@@ -21,7 +21,7 @@ def handle_send_create_booking_email(event: CreateBookingEvent):
 def handle_send_delete_booking_email(event: DeleteBookingEvent):
     booking: Booking = Booking.objects.get(id=event.booking_id)
 
-    print('TEST HITTING EVENT HANDLER ========================', flush=True)
+    print('TEST HITTING EVENT HANDLER ========================', booking, flush=True)
 
     send_html_email(
         subject=f"Booking cancelled for {booking.booked_class.title}",

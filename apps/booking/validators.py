@@ -4,6 +4,7 @@ from apps.user.serializers import UserSerializer
 from apps.classes.models import Classes
 from apps.booking.models import Booking
 from apps.user.value_objects import Role
+from django.utils import timezone
 
 
 
@@ -11,11 +12,11 @@ class CreateBookingValidator(serializers.Serializer):
     client_id = serializers.UUIDField(required=True, allow_null=False)
     class_id = serializers.UUIDField(required=True, allow_null=False)
 
-    def validate_user_id(self, value):
+    def validate_client_id(self, value):
         booker = self.context.get('booker')
         client = User.objects.get(id=value)
 
-        if client.id != booker.id or booker.role == Role.ADMIN:
+        if client.id != booker.id and booker.role != Role.ADMIN:
             raise serializers.ValidationError("not_allowed")
 
         return value
@@ -31,6 +32,9 @@ class CreateBookingValidator(serializers.Serializer):
         current_bookings = booked_class.bookings.count()
         if current_bookings >= booked_class.size:
             raise serializers.ValidationError("class_full")
+
+        if booked_class.date and booked_class.date < timezone.now():
+            raise serializers.ValidationError("class_in_past")
 
         return attrs
 

@@ -21,7 +21,11 @@ def handle_delete_booking(command: DeleteBookingCommand):
 
     booking: Booking = Booking.objects.get(id=command.booking_id)
 
+    print('HITTNG booking =====================', booking, flush=True)
+
     event = DeleteBookingEvent(booking_id=booking.id)
     booking_event_dispatcher.dispatch(event)
+
+    print('HITTNG after event =====================', booking, flush=True)
 
     booking.delete()

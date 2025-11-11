@@ -64,13 +64,11 @@ def sample_class(db, instructor_user):
         title="Morning Pilates",
         description="A beginner pilates session.",
         instructor=instructor_user,
+        size=2
     )
 
 
 @pytest.fixture
 def sample_booking(db, client_user, sample_class):
-    return baker.make(
-        Booking,
-        client=client_user,
-        booked_class=sample_class,
-    )
+    return Booking.objects.create(client=client_user, booked_class=sample_class)
+
