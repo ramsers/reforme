@@ -70,13 +70,9 @@ class ClassesViewSet(viewsets.ModelViewSet):
         serializer = ClassesSerializer(updated_class)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-
+    @is_admin
     @action(detail=True, methods=["delete"], url_path="delete")
     def delete(self, request, *args, **kwargs):
-        print('HITTNG VIEW ====================', flush=True)
-        print('HITTNG COMMAND ======= ====================', flush=True)
-
-
         command = DeleteClassCommand(id=self.kwargs.get('pk'),
                                      delete_series=request.GET.get('delete_series') == 'true')
         classes_command_bus.handle(command)

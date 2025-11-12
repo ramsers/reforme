@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.user.models import Role  # adjust this import path to your actual Role model
 from apps.classes.models import Classes
 from apps.booking.models import Booking
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -64,6 +65,7 @@ def sample_class(db, instructor_user):
         title="Morning Pilates",
         description="A beginner pilates session.",
         instructor=instructor_user,
+        date=timezone.now() + timezone.timedelta(days=1),
         size=2
     )
 

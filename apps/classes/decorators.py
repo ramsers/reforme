@@ -6,9 +6,6 @@ from rest_framework import status
 
 
 def is_instructor(function):
-    """
-    Allows access only to users with role=INSTRUCTOR.
-    """
     @wraps(function)
     def decorator(view, request, *args, **kwargs):
         return function(view, request, *args, **kwargs)\
@@ -18,9 +15,6 @@ def is_instructor(function):
 
 
 def is_client(function):
-    """
-    Allows access only to users with role=CLIENT.
-    """
     @wraps(function)
     def decorator(view, request, *args, **kwargs):
         return function(view, request, *args, **kwargs)\
@@ -30,12 +24,8 @@ def is_client(function):
 
 
 def is_admin(function):
-    """
-    Allows access only to users with role=ADMIN.
-    """
     @wraps(function)
     def decorator(view, request, *args, **kwargs):
-        print('REQUEST ===============', request)
         return function(view, request, *args, **kwargs)\
             if request.user.is_authenticated and request.user.role == Role.ADMIN\
             else Response(status=status.HTTP_403_FORBIDDEN, data="admins only")

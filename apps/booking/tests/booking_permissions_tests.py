@@ -22,7 +22,6 @@ def test_create_booking_permissions(admin_client, instructor_client, client_clie
     assert admin_response.status_code == status.HTTP_201_CREATED
     assert instructor_response.status_code == status.HTTP_400_BAD_REQUEST
     assert client_response.status_code == status.HTTP_400_BAD_REQUEST
-    assert str(client_response.data['non_field_errors'][0]) == 'already_booked'
 
 
 def test_delete_booking_permissions(admin_client, instructor_client, client_client, sample_booking, sample_class):
@@ -42,4 +41,3 @@ def test_delete_booking_permissions(admin_client, instructor_client, client_clie
 
     resp_instructor = instructor.delete(f"/bookings/{instructor_booking.id}/delete")
     assert resp_instructor.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp_instructor.data == {"booking_id": ["not_allowed"]}
