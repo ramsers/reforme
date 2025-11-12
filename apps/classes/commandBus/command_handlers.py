@@ -94,6 +94,19 @@ def handle_delete_class(command: DeleteClassCommand):
     class_to_delete = Classes.objects.get(id=command.id)
     root_class = class_to_delete.parent_class or class_to_delete
 
+    print("DEBUG -- Deleting class:", class_to_delete.id, class_to_delete.date)
+    print("DEBUG -- Root class:", root_class.id, root_class.date)
+    print("DEBUG -- delete_series flag:", command.delete_series)
+    print(
+        "DEBUG -- Chain classes before delete:",
+        list(
+            Classes.objects.filter(Q(parent_class=root_class) | Q(id=root_class.id))
+            .order_by("date")
+            .values_list("id", "date")
+        ),
+        flush=True
+    )
+
     if command.delete_series:
         Classes.objects.filter(
                 Q(parent_class=root_class) | Q(id=root_class.id),

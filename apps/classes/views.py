@@ -73,6 +73,7 @@ class ClassesViewSet(viewsets.ModelViewSet):
     @is_admin
     @action(detail=True, methods=["delete"], url_path="delete")
     def delete(self, request, *args, **kwargs):
+        print('TESTO BESTO ===================', self.kwargs.get('pk'), flush=True)
         command = DeleteClassCommand(id=self.kwargs.get('pk'),
                                      delete_series=request.GET.get('delete_series') == 'true')
         classes_command_bus.handle(command)

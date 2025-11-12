@@ -38,12 +38,3 @@ class PartialUpdateClassesValidator(serializers.Serializer):
         required=False,
         allow_null=True
     )
-
-
-    def validate(self, attrs):
-        user = self.context.get('user')
-        class_to_update = self.context.get('class')
-
-        if user.role != Role.ADMIN:
-            raise serializers.ValidationError("not_allowed")
-        return attrs
