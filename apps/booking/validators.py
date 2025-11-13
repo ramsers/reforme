@@ -5,6 +5,7 @@ from apps.classes.models import Classes
 from apps.booking.models import Booking
 from apps.user.value_objects import Role
 from django.utils import timezone
+from apps.payment.models import PassPurchase
 
 
 
@@ -35,6 +36,15 @@ class CreateBookingValidator(serializers.Serializer):
 
         if booked_class.date and booked_class.date < timezone.now():
             raise serializers.ValidationError("class_in_past")
+
+        has_active_purchase = PassPurchase.objects.filter(
+            user_id=client_id,
+            active=True,
+            is_cancel_requested=False,
+        ).exists()
+
+        if not has_active_purchase:
+            raise serializers.ValidationError("no_active_purchase")
 
         return attrs
 

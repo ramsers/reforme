@@ -7,6 +7,7 @@ from apps.user.models import Role  # adjust this import path to your actual Role
 from apps.classes.models import Classes
 from apps.booking.models import Booking
 from django.utils import timezone
+from apps.payment.models import PassPurchase
 
 User = get_user_model()
 
@@ -40,6 +41,27 @@ def instructor_client(db):
 @pytest.fixture
 def client_client(db):
     client, user = create_authenticated_client(Role.CLIENT)
+    return client, user
+
+@pytest.fixture
+def client_client_with_active_purchase(db):
+    """
+    Returns an authenticated client + user who has an active purchase.
+    """
+    client, user = create_authenticated_client(Role.CLIENT)
+
+    PassPurchase.objects.create(
+        user=user,
+        stripe_product_id="prod_active",
+        stripe_customer_id="cus_active",
+        pass_name="Unlimited Monthly",
+        is_subscription=True,
+        active=True,
+        start_date=timezone.now() - timezone.timedelta(days=3),
+        end_date=timezone.now() + timezone.timedelta(days=999),
+        is_cancel_requested=False,
+    )
+
     return client, user
 
 

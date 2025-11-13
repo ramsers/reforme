@@ -1,5 +1,5 @@
 from conftest import (client_client, sample_class,
-                      sample_booking, client_user, api_client)
+                      sample_booking, client_user, api_client, client_client_with_active_purchase)
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
@@ -11,8 +11,9 @@ bookings_endpoint = "/bookings"
 
 pytestmark = pytest.mark.django_db
 
-def test_create_booking_successfully(client_client, sample_class):
-    client, client_obj = client_client
+
+def test_create_booking_successfully(client_client_with_active_purchase, sample_class):
+    client, client_obj = client_client_with_active_purchase
 
     payload = {
         "class_id": sample_class.id,
@@ -41,6 +42,20 @@ def test_create_booking_successfully(client_client, sample_class):
     assert instructor_data["email"] == sample_class.instructor.email
     assert instructor_data["name"] == sample_class.instructor.name
     assert response.status_code == status.HTTP_201_CREATED
+
+
+def test_create_booking_without_active_pass_should_fail(client_client, sample_class):
+    client, client_obj = client_client
+
+    payload = {
+        "class_id": sample_class.id,
+        "client_id": client_obj.id,
+    }
+
+    response = client.post(bookings_endpoint, payload, format="json")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.data['non_field_errors'][0] == "no_active_purchase"
 
 
 @pytest.mark.django_db(transaction=True)
