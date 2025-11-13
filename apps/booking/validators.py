@@ -23,6 +23,7 @@ class CreateBookingValidator(serializers.Serializer):
         return value
 
     def validate(self, attrs):
+        booker = self.context.get('booker')
         client_id = attrs.get("client_id")
         class_id = attrs.get("class_id")
         booked_class = Classes.objects.get(id=class_id)
@@ -43,7 +44,7 @@ class CreateBookingValidator(serializers.Serializer):
             is_cancel_requested=False,
         ).exists()
 
-        if not has_active_purchase:
+        if booker.role != Role.ADMIN and not has_active_purchase:
             raise serializers.ValidationError("no_active_purchase")
 
         return attrs

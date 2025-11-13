@@ -58,28 +58,25 @@ class UserViewSet(viewsets.ModelViewSet):
     def all_instructors(self, request):
         queryset = User.objects.filter(role=Role.INSTRUCTOR)
         queryset = self.filter_queryset(queryset)
+        show_all = request.query_params.get("all") in ["true", "1"]
+
+        if show_all:
+            self.paginator.page_size = queryset.count()
+
         page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = UserSerializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = UserSerializer(queryset, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = UserSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
     @is_admin
     @action(detail=False, methods=["get"], url_path="all-clients")
     def all_clients(self, request):
         queryset = User.objects.filter(role=Role.CLIENT)
-
         queryset = self.filter_queryset(queryset)
+        show_all = request.query_params.get("all") in ["true", "1"]
+
+        if show_all:
+            self.paginator.page_size = queryset.count()
+
         page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = UserSerializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = UserSerializer(queryset, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = UserSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)

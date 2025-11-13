@@ -115,3 +115,16 @@ def test_create_booking_for_past_class_should_fail(client_client, instructor_use
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.data['non_field_errors'][0] == "class_in_past"
+
+
+def test_admin_can_book_client_without_active_purchase(admin_client, client_user, sample_class):
+    admin, admin_user = admin_client
+
+    payload = {
+        "class_id": str(sample_class.id),
+        "client_id": str(client_user.id),
+    }
+
+    response = admin.post(bookings_endpoint, payload, format="json")
+
+    assert response.status_code == status.HTTP_201_CREATED, response.data
