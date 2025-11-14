@@ -49,15 +49,6 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-django
 
-      - name: Wait for MySQL
-        run: |
-          sudo apt-get install -y mysql-client
-          until mysqladmin ping -h db -u reforme -preforme --silent; do
-            echo "⏳ Waiting for database connection..."
-            sleep 3
-          done
-          echo "✅ MySQL is ready!"
-
       - name: Run tests
         run: |
           python manage.py migrate --noinput
