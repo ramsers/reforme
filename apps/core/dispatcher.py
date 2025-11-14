@@ -12,8 +12,8 @@ class EventDispatcher:
     def dispatch(self, event, async_default: bool = True):
         """Dispatch an event instance. By default try async when possible."""
         # decide async: prefer environment flag or passed arg
-        run_async = async_default and os.environ.get("APP_ENV") != "local" or os.environ.get("APP_ENV") != "test"
-
+        env = os.environ.get("APP_ENV", "local").lower()
+        run_async = async_default and env not in ("local", "test")
         handlers = [h for (cls, h) in self._handlers if cls == event.__class__]
         if not handlers:
             return  # or raise
