@@ -87,7 +87,7 @@ def test_login_successfully(api_client, test_user):
         "password": "testpassword!",
     }
 
-    resp = api_client.post(signup_endpoint, payload, format="json")
+    resp = api_client.post(login_endpoint, payload, format="json")
 
     assert resp.status_code == status.HTTP_200_OK
     data = resp.json()

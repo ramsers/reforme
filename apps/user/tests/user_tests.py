@@ -16,7 +16,7 @@ def test_create_user_successfully(admin_client):
 
     admin, admin_user = admin_client
 
-    admin_response = admin.post(users_endpoint, new_user_payload, format="json")
+    admin_response = admin.post(users_endpoint, payload, format="json")
 
     assert admin_response.status_code == status.HTTP_201_CREATED
     assert admin_response.data["email"] == payload["email"]
@@ -54,7 +54,6 @@ def test_create_user_missing_required_fields(admin_client):
     assert "role" in response.data
 
 def test_create_user_duplicate_email(admin_client):
-    """Ensure validator rejects duplicate emails."""
     admin, admin_user = admin_client
 
     User.objects.create(
@@ -79,6 +78,8 @@ def test_create_user_duplicate_email(admin_client):
 
 
 def test_update_user_successfully(admin_client, client_client):
+    client, client_user = client_client
+
     payload = {
         "email": "newuser@example.com",
         "password": "StrongPass123!",
@@ -88,12 +89,12 @@ def test_update_user_successfully(admin_client, client_client):
 
     admin, admin_user = admin_client
 
-    admin_response = admin.post(f"{users_endpoint}/{client_client}", payload, format="json")
+    admin_response = admin.patch(f"{users_endpoint}/{client_user.id}", payload, format="json")
 
-    assert admin_response.status_code == status.HTTP_201_CREATED
-    assert admin_response.data["email"] == new_user_payload["email"]
-    assert admin_response.data["name"] == new_user_payload["name"]
-    assert admin_response.data["role"] == new_user_payload["role"]
+    assert admin_response.status_code == status.HTTP_200_OK
+    assert admin_response.data["email"] == payload["email"]
+    assert admin_response.data["name"] == payload["name"]
+    assert admin_response.data["role"] == payload["role"]
 
 
 
