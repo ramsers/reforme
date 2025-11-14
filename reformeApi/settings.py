@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-pk(eliwr&vo=s6h*n+(1vky0sj379q&%j6c=p7o-z&gs79rj4g
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+ENVIRONMENT = os.getenv("ENVIRONMENT", "local").lower()
 
 
 # Application definition
