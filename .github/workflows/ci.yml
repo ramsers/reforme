@@ -52,7 +52,7 @@ jobs:
       - name: Wait for MySQL
         run: |
           sudo apt-get install -y mysql-client
-          until mysqladmin ping -h db -u root -proot --silent; do
+          until mysqladmin ping -h db -u reforme -preforme --silent; do
             echo "⏳ Waiting for database connection..."
             sleep 3
           done
