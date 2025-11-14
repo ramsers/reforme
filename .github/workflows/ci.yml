@@ -2,9 +2,9 @@ name: Django CI (MySQL)
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ master ]
 
 jobs:
   test:
@@ -28,7 +28,10 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: reformeApi.settings
-      DATABASE_URL: mysql://test_user:test_pass@db:3306/test_db
+      MYSQL_HOST: db
+      MYSQL_USER: reforme
+      MYSQL_PASSWORD: reforme
+      MYSQL_DATABASE: reforme
       PYTHONUNBUFFERED: 1
 
     steps:
