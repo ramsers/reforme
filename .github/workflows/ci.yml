@@ -32,7 +32,7 @@ jobs:
       MYSQL_USER: reforme
       MYSQL_PASSWORD: reforme
       MYSQL_DATABASE: reforme
-      ENVIRONMENT: test
+      APP_ENV: test
       PYTHONUNBUFFERED: 1
 
     steps:
