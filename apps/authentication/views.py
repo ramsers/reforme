@@ -14,8 +14,7 @@ class SignUpAPI(APIView):
         validator = SignUpValidator(data={**request.data})
         validator.is_valid(raise_exception=True)
 
-        with transaction.atomic():
-            user_command = CreateUserCommand(**validator.validated_data)
+        user_command = CreateUserCommand(**validator.validated_data)
         user = user_command_bus.handle(user_command)
         refresh = RefreshToken.for_user(user)
         serializer = UserSerializer(user)

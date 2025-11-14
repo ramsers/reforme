@@ -13,7 +13,6 @@ class SignUpValidator(serializers.Serializer):
     role = serializers.ChoiceField(choices=Role.choices, required=False, allow_null=True)
 
     def validate(self, attrs):
-        user = self.context.get('user')
         email = attrs.get('email')
         password = attrs.get('password')
 
@@ -40,10 +39,10 @@ class LoginValidator(serializers.Serializer):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid credentials.")
+            raise serializers.ValidationError("Invalid email.")
 
         if not check_password(password, user.password):
-            raise serializers.ValidationError("Invalid credentials.")
+            raise serializers.ValidationError("Password doesn't match.")
 
         attrs["user"] = user
         return attrs

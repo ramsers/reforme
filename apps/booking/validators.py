@@ -55,9 +55,6 @@ class DeleteBookingValidator(serializers.Serializer):
 
     def validate_booking_id(self, value):
         booking_to_delete = Booking.objects.get(id=value)
-        print('HITTING Validator ==============', booking_to_delete, flush=True)
-
-
         client = self.context.get('client')
 
         if booking_to_delete.client.id != client.id and client.role != Role.ADMIN:
