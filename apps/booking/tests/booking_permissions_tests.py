@@ -15,10 +15,6 @@ def test_create_booking_permissions(admin_client, instructor_client, client_clie
     instructor_response = instructor.post(bookings_endpoint, payload, format="json")
     client_response = client.post(bookings_endpoint, payload, format="json")
 
-    print("Admin response:", admin_response.data, flush=True)
-    print("Instructor response:", instructor_response.status_code, flush=True)
-    print("Client response:", client_response.status_code, flush=True)
-
     assert admin_response.status_code == status.HTTP_201_CREATED
     assert instructor_response.status_code == status.HTTP_400_BAD_REQUEST
     assert client_response.status_code == status.HTTP_400_BAD_REQUEST

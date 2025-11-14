@@ -58,7 +58,6 @@ def test_create_booking_without_active_pass_should_fail(client_client, sample_cl
     assert response.data['non_field_errors'][0] == "no_active_purchase"
 
 
-@pytest.mark.django_db(transaction=True)
 def test_double_booking_should_fail(api_client, client_user, sample_class, sample_booking):
 
     refresh = RefreshToken.for_user(client_user)
@@ -70,7 +69,6 @@ def test_double_booking_should_fail(api_client, client_user, sample_class, sampl
     }
 
     response = api_client.post("/bookings", payload, format="json")
-    print("SECOND booking =", response.data, flush=True)
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.data['non_field_errors'][0] == "already_booked"
@@ -111,7 +109,6 @@ def test_create_booking_for_past_class_should_fail(client_client, instructor_use
     }
 
     response = client.post(bookings_endpoint, payload, format="json")
-    print("Response (past class):", response.data, flush=True)
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.data['non_field_errors'][0] == "class_in_past"

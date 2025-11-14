@@ -1,7 +1,6 @@
 from apps.booking.models import Booking
 from rest_framework.decorators import permission_classes, action
 from apps.booking.serializers import BookingSerializer
-from apps.classes.decorators import is_client
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from apps.booking.validators import CreateBookingValidator, DeleteBookingValidator
@@ -40,10 +39,8 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["delete"], url_path="delete")
     def delete(self, request, *args, **kwargs):
-        print('HITTING VIEW ==============', self.kwargs.get('pk'), flush=True)
         validator = DeleteBookingValidator(data={'booking_id': self.kwargs.get('pk')}, context={"client": request.user})
         validator.is_valid(raise_exception=True)
-
 
         command = DeleteBookingCommand(booking_id=validator.validated_data['booking_id'])
         booking_command_bus.handle(command)
