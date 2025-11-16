@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.utils import timezone
-from apps.user.value_objects import Role
 from apps.classes.value_objects import ClassRecurrenceType
 
 

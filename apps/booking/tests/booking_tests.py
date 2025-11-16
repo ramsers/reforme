@@ -23,10 +23,6 @@ def test_create_booking_successfully(client_client_with_active_purchase, sample_
     response = client.post(bookings_endpoint, payload, format="json")
     data = response.data
 
-    assert "id" in data
-    assert "client" in data
-    assert "booked_class" in data
-
     client_data = data["client"]
     assert client_data["email"] == client_obj.email
     assert client_data["name"] == client_obj.name

@@ -1,7 +1,7 @@
 from apps.classes.models import Classes
 from rest_framework.decorators import permission_classes, action
 from apps.classes.serializers import ClassesSerializer
-from apps.classes.decorators import is_instructor, is_admin
+from apps.classes.decorators import is_admin
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from apps.classes.validators import CreateClassesValidator, PartialUpdateClassesValidator
@@ -17,7 +17,6 @@ class ClassesViewSet(viewsets.ModelViewSet):
     serializer_class = ClassesSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ClassesFilter
-    # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -48,9 +47,6 @@ class ClassesViewSet(viewsets.ModelViewSet):
     @is_admin
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-
-        print('TEST REQUEST DATA ==========', request.data, flush=True)
-
         validator = PartialUpdateClassesValidator(data={**request.data},
                                                   context={'user': request.user, 'class': instance})
         validator.is_valid(raise_exception=True)
@@ -73,7 +69,6 @@ class ClassesViewSet(viewsets.ModelViewSet):
     @is_admin
     @action(detail=True, methods=["delete"], url_path="delete")
     def delete(self, request, *args, **kwargs):
-        print('TESTO BESTO ===================', self.kwargs.get('pk'), flush=True)
         command = DeleteClassCommand(id=self.kwargs.get('pk'),
                                      delete_series=request.GET.get('delete_series') == 'true')
         classes_command_bus.handle(command)

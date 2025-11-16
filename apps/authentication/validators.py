@@ -39,10 +39,10 @@ class LoginValidator(serializers.Serializer):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid email.")
+            raise serializers.ValidationError("User not found")
 
         if not check_password(password, user.password):
-            raise serializers.ValidationError("Password doesn't match.")
+            raise serializers.ValidationError("Password doesn't match")
 
         attrs["user"] = user
         return attrs

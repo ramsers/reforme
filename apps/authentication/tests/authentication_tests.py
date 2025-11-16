@@ -124,10 +124,10 @@ def test_login_invalid_credentials(api_client):
     resp_invalid_email = api_client.post(login_endpoint, payload_invalid_email, format="json")
 
     assert resp_invalid_email.status_code == status.HTTP_400_BAD_REQUEST
-    assert str(resp_invalid_email.data['non_field_errors'][0]) == "Invalid credentials."
+    assert str(resp_invalid_email.data['non_field_errors'][0]) == "User not found"
 
     payload_wrong_password = {"email": user.email, "password": "WrongPass999!"}
     resp_wrong_password = api_client.post(login_endpoint, payload_wrong_password, format="json")
 
     assert resp_wrong_password.status_code == status.HTTP_400_BAD_REQUEST
-    assert str(resp_wrong_password.data['non_field_errors'][0]) == "Password doesn't match."
+    assert str(resp_wrong_password.data['non_field_errors'][0]) == "Password doesn't match"
