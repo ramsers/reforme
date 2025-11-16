@@ -1,6 +1,7 @@
 from apps.core.dispatcher import EventDispatcher
-from apps.classes.events.events import RescheduleClassEvent
-from .event_handlers import handle_class_rescheduled_event
+from apps.classes.events.events import RescheduleClassEvent, DeletedClassEvent
+from .event_handlers import handle_class_rescheduled_event, handle_class_deleted_event
 
 class_event_dispatcher = EventDispatcher()
 class_event_dispatcher.add_handler(RescheduleClassEvent, handle_class_rescheduled_event)
+class_event_dispatcher.add_handler(DeletedClassEvent, handle_class_deleted_event)

@@ -7,7 +7,10 @@ import datetime
 from datetime import timedelta
 from apps.classes.services.class_update_services import (generate_recurring_classes, recurrence_changed,
                                                          regenerate_future_classes, detect_datetime_change,
-                                                         emit_reschedule_event, collect_field_updates, shift_future_class_times)
+                                                         emit_reschedule_event, collect_field_updates,
+                                                         shift_future_class_times)
+from apps.classes.events.events import DeletedClassEvent
+from apps.classes.events.event_dispatchers import class_event_dispatcher
 
 
 def handle_create_class(command: CreateClassCommand):
@@ -85,6 +88,12 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
 def handle_delete_class(command: DeleteClassCommand):
     class_to_delete = Classes.objects.get(id=command.id)
     root_class = class_to_delete.parent_class or class_to_delete
+
+    event = DeletedClassEvent(
+        class_id=class_to_delete.id,
+    )
+
+    class_event_dispatcher.dispatch(event)
 
     if command.delete_series:
         Classes.objects.filter(
