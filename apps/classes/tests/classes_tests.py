@@ -4,7 +4,7 @@ from django.utils import timezone
 from model_bakery import baker
 from apps.classes.models import Classes
 from apps.classes.value_objects import ClassRecurrenceType
-from conftest import admin_client
+from conftest import (admin_client)
 from django.db.models import Q
 
 
