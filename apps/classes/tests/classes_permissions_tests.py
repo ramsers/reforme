@@ -3,6 +3,8 @@ from rest_framework import status
 from django.utils import timezone
 from model_bakery import baker
 from apps.classes.models import Classes
+import pytest
+
 
 classes_endpoint = "/classes"
 
