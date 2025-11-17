@@ -9,13 +9,6 @@ pytestmark = pytest.mark.django_db
 signup_endpoint = "/authentication/sign-up"
 login_endpoint = "/authentication/login"
 
-@pytest.fixture
-def test_user(db):
-    user = baker.make(User, email="testuser@example.com")
-    user.set_password("testpassword!")
-    user.save(update_fields=["password"])
-    return user
-
 
 def test_signup_successfully(api_client):
     payload = {

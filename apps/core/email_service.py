@@ -8,7 +8,7 @@ def send_html_email(subject: str, to: str, template_name: str, context: dict):
     email = EmailMultiAlternatives(
         subject=subject,
         body=text_content,
-        from_email=None,  # uses DEFAULT_FROM_EMAIL
+        from_email=None,
         to=[to],
     )
     email.attach_alternative(html_content, "text/html")

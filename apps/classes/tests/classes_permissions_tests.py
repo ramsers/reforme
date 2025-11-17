@@ -1,4 +1,4 @@
-from conftest import admin_client, instructor_client, client_client, sample_class, sample_booking
+from conftest import admin_client, instructor_client, client_client
 from rest_framework import status
 from django.utils import timezone
 from model_bakery import baker

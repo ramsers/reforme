@@ -77,7 +77,7 @@ class StripeWebhookApi(APIView):
 
         object_data = event["data"]["object"]
 
-        metadata = object_data.get("metadata", {})  # metadata dict
+        metadata = object_data.get("metadata", {})
         is_subscription = event["type"] == "checkout.session.completed"
         subscription_id = object_data.get("subscription") if is_subscription else None
 

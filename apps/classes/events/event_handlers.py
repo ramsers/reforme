@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, F
 from apps.classes.models import Classes
 from apps.core.email_service import send_html_email
 from apps.classes.events.events import RescheduleClassEvent, DeletedClassEvent
@@ -69,6 +69,5 @@ def handle_class_deleted_event(event: DeletedClassEvent):
             context={
                 "class_name": cls.title,
                 "class_date": cls.date,
-                "instructor_name": cls.instructor.name,
             }
         )

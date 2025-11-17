@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from model_bakery import baker
 from rest_framework_simplejwt.tokens import RefreshToken
-from apps.user.models import Role  # adjust this import path to your actual Role model
+from apps.user.models import Role
 from apps.classes.models import Classes
 from apps.booking.models import Booking
 from django.utils import timezone
@@ -17,10 +17,6 @@ def api_client():
 
 
 def create_authenticated_client(role: str):
-    """
-    Helper to create an authenticated APIClient for a given role.
-    Uses JWT tokens for auth.
-    """
     user = baker.make(User, email=f"{role.lower()}@reforme.com", role=role, name=f"{role.title()} User")
     user.set_password("testpassword123!")
     user.save()
@@ -30,6 +26,14 @@ def create_authenticated_client(role: str):
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
     return client, user
+
+
+@pytest.fixture
+def test_user(db):
+    user = baker.make(User, email="testuser@example.com")
+    user.set_password("testpassword!")
+    user.save(update_fields=["password"])
+    return user
 
 
 @pytest.fixture
@@ -45,9 +49,6 @@ def client_client(db):
 
 @pytest.fixture
 def client_client_with_active_purchase(db):
-    """
-    Returns an authenticated client + user who has an active purchase.
-    """
     client, user = create_authenticated_client(Role.CLIENT)
 
     PassPurchase.objects.create(

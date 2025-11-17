@@ -31,9 +31,6 @@ class ClassesViewSet(viewsets.ModelViewSet):
 
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
     @is_admin
     def create(self, request, *args, **kwargs):
         validator = CreateClassesValidator(data=request.data)
