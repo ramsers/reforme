@@ -142,4 +142,3 @@ def test_forgot_password_invalid_email(api_client):
     assert "email" in resp.data
     assert resp.data["email"][0] == "If email exists, a reset link will be sent."
 
-
