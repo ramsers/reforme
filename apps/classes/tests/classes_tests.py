@@ -6,7 +6,7 @@ from apps.classes.models import Classes
 from apps.classes.value_objects import ClassRecurrenceType
 from conftest import (admin_client)
 from django.db.models import Q
-
+import pytest
 
 
 pytestmark = pytest.mark.django_db(transaction=True)
