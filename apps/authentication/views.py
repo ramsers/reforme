@@ -6,7 +6,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.authentication.validators import SignUpValidator, LoginValidator
 from apps.user.commandBus.command_bus import user_command_bus
 from apps.user.commandBus.commands import CreateUserCommand
+from apps.authentication.commandBus.commands import RequestResetPasswordCommand
 from apps.user.serializers import UserSerializer
+from apps.authentication.commandBus.command_bus import auth_command_bus
 
 
 class SignUpAPI(APIView):
@@ -46,3 +48,14 @@ class LoginAPI(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        validator = ForgotPasswordValidator(email=request.data.get("email"))
+        validator.is_valid(raise_exception=True)
+
+        command = RequestResetPasswordCommand(validator.validated_data.get("email"))
+        auth_command_bus.handle(command)
+
+        return Response(status=status.HTTP_200_OK)

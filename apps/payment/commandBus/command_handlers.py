@@ -22,8 +22,8 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
                 "quantity": 1,
             }],
             mode="subscription",
-            success_url=os.environ.get('FRONTEND_URL'),
-            cancel_url=os.environ.get('FRONTEND_URL'),
+            success_url=os.environ.get('PAYMENT_REDIRECT'),
+            cancel_url=os.environ.get('PAYMENT_REDIRECT'),
             metadata={
                 "user_id": user.id,
                 "product_name": command.product_name,

@@ -3,6 +3,7 @@ from apps.user.models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from apps.user.value_objects import Role
+from .models import PasswordResetToken
 
 
 class SignUpValidator(serializers.Serializer):
@@ -46,3 +47,14 @@ class LoginValidator(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
+
+
+class ForgotPasswordValidator(serializers.Serializer):
+    email = serializers.EmailField(required=True, allow_null=False)
+
+    def validate_email(self, value):
+        user = User.objects.get(email=value)
+
+        if not user:
+            raise serializers.ValidationError("If email exists, a reset link will be sent.")
+        return value
