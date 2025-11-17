@@ -53,8 +53,8 @@ class ForgotPasswordValidator(serializers.Serializer):
     email = serializers.EmailField(required=True, allow_null=False)
 
     def validate_email(self, value):
-        user = User.objects.get(email=value)
-
-        if not user:
+        try:
+            User.objects.get(email=value)
+        except User.DoesNotExist:
             raise serializers.ValidationError("If email exists, a reset link will be sent.")
         return value

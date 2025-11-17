@@ -1,5 +1,6 @@
 from pymessagebus._commandbus import CommandBus
-
+from apps.authentication.commandBus.commands import RequestResetPasswordCommand
+from apps.authentication.commandBus.command_handlers import handle_request_password_reset
 
 auth_command_bus = CommandBus(locking=True)
 auth_command_bus.add_handler(RequestResetPasswordCommand, handle_request_password_reset)

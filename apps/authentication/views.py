@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken
-from apps.authentication.validators import SignUpValidator, LoginValidator
+from apps.authentication.validators import SignUpValidator, LoginValidator, ForgotPasswordValidator
 from apps.user.commandBus.command_bus import user_command_bus
 from apps.user.commandBus.commands import CreateUserCommand
 from apps.authentication.commandBus.commands import RequestResetPasswordCommand
@@ -50,9 +50,9 @@ class LoginAPI(APIView):
         )
 
 
-class ForgotPasswordView(APIView):
+class ForgotPassword(APIView):
     def post(self, request):
-        validator = ForgotPasswordValidator(email=request.data.get("email"))
+        validator = ForgotPasswordValidator(data={**request.data})
         validator.is_valid(raise_exception=True)
 
         command = RequestResetPasswordCommand(validator.validated_data.get("email"))

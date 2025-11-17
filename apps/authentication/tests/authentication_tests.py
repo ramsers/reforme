@@ -124,3 +124,22 @@ def test_login_invalid_credentials(api_client):
 
     assert resp_wrong_password.status_code == status.HTTP_400_BAD_REQUEST
     assert str(resp_wrong_password.data['non_field_errors'][0]) == "Password doesn't match"
+
+def test_forgot_password_valid_email(api_client, test_user):
+    payload = {"email": test_user.email}
+
+    resp = api_client.post("/authentication/forgot-password", payload, format="json")
+
+    assert resp.status_code == status.HTTP_200_OK
+
+
+def test_forgot_password_invalid_email(api_client):
+    payload = {"email": "idontexist@example.com"}
+
+    resp = api_client.post("/authentication/forgot-password", payload, format="json")
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert "email" in resp.data
+    assert resp.data["email"][0] == "If email exists, a reset link will be sent."
+
+

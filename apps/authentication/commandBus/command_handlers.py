@@ -1,7 +1,9 @@
 from apps.authentication.commandBus.commands import RequestResetPasswordCommand
-from .models import PasswordResetToken
 from apps.authentication.events.events import SendPasswordResetEvent
 from apps.authentication.events.event_dispatchers import auth_event_dispatcher
+from apps.authentication.models import PasswordResetToken
+from apps.user.models import User
+
 
 def handle_request_password_reset(command: RequestResetPasswordCommand):
     user = User.objects.get(email=command.email)
