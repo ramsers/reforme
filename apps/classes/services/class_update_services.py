@@ -5,6 +5,7 @@ from django.utils import timezone
 from apps.classes.models import Classes
 from apps.classes.events.events import RescheduleClassEvent
 from apps.classes.events.event_dispatchers import class_event_dispatcher
+from dateutil.relativedelta import relativedelta
 
 
 def generate_recurring_classes(base_class: Classes, count: int = 10):

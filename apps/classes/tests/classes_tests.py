@@ -7,6 +7,7 @@ from apps.classes.value_objects import ClassRecurrenceType
 from conftest import (admin_client)
 from django.db.models import Q
 import pytest
+from apps.classes.services.class_update_services import generate_recurring_classes
 
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -217,7 +218,6 @@ def test_partial_update_single_class_successfully(admin_client, instructor_user)
 
 
 def test_partial_update_weekly_class_updates_series_and_regenerates_children(admin_client, instructor_user):
-    from apps.classes.commandBus.command_handlers import __generate_recurring_classes
     admin, _ = admin_client
 
     start_date = timezone.now() + timezone.timedelta(days=1)
@@ -232,7 +232,7 @@ def test_partial_update_weekly_class_updates_series_and_regenerates_children(adm
         recurrence_days=[0, 2]
     )
 
-    __generate_recurring_classes(parent_class)
+    generate_recurring_classes(parent_class)
     old_children = list(parent_class.child_classes.all())
     assert old_children
     assert all(c.date.weekday() in [0, 2] for c in old_children)
