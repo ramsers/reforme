@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('client', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='booked_class', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'bookings',
+                'db_table': 'booking',
             },
         ),
     ]
