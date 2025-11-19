@@ -13,6 +13,7 @@ class PassPurchase(UUIDModel, TimestampModel):
     stripe_price_id = models.CharField(max_length=255)
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
     stripe_subscription_id = models.CharField(max_length=255, null=True, blank=True)
+    stripe_idempotency_key = models.CharField(max_length=255, blank=True, null=True, unique=True)
     is_cancel_requested = models.BooleanField(default=False)
     pass_name = models.CharField(max_length=255)
     is_subscription = models.BooleanField(default=False)

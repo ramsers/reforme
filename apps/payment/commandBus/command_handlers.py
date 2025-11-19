@@ -31,11 +31,9 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
                 "duration_days": command.duration_days,
             },
         )
-        print('CHECKING THE SESSION ==============', checkout_session, flush=True)
 
         return checkout_session.url
     else:
-        print('PAYMENT INTENT ==============', command.price_amount, flush=True)
         payment_intent = stripe.PaymentIntent.create(
             amount=int(command.price_amount * 100),
             currency=command.currency,
@@ -53,15 +51,16 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
 def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
     user = User.objects.get(id=command.user_id)
 
-    pass_purchase = None
+    if command.stripe_idempotency_key:
+        existing_purchase = PassPurchase.objects.filter(
+            stripe_idempotency_key=command.stripe_idempotency_key
+        ).first()
+        if existing_purchase:
+            return existing_purchase
 
     duration_days = int(command.duration_days)
 
-    # Compute start and end dates
-    start_date = timezone.now()
-    end_date = start_date + timedelta(days=duration_days) if duration_days > 0 else None
-
-    print('COMMAND USER ID BRO =====================', end_date, flush=True)
+    end_date = timezone.now() + timedelta(days=duration_days) if duration_days > 0 else None
 
     if command.is_subscription:
         pass_purchase = PassPurchase.objects.create(
@@ -74,6 +73,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
             stripe_subscription_id=command.stripe_subscription_id,
             active=command.active,
             end_date=end_date,
+            stripe_idempotency_key=command.stripe_idempotency_key,
         )
     else:
         pass_purchase = PassPurchase.objects.create(
@@ -85,6 +85,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
             is_subscription=command.is_subscription,
             active=command.active,
             end_date=end_date,
+            stripe_idempotency_key=command.stripe_idempotency_key,
         )
 
     event = PaymentSuccessEvent(user_id=user.id, product_name=command.product_name)

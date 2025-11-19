@@ -12,7 +12,7 @@ class CreatePurchaseIntentCommand(typing.NamedTuple):
 
 class CreatePassPurchaseCommand(typing.NamedTuple):
     user_id: str
-    stripe_product_id: str
+    stripe_product_id: str | None
     product_name: str
     stripe_price_id: str
     is_subscription: bool
@@ -23,6 +23,7 @@ class CreatePassPurchaseCommand(typing.NamedTuple):
     stripe_checkout_id: str | None = None
     stripe_customer_id: str | None = None
     stripe_subscription_id: str | None = None
+    stripe_idempotency_key: str | None = None
 
 
 class CancelSubscriptionCommand(typing.NamedTuple):
