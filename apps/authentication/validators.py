@@ -3,7 +3,8 @@ from apps.user.models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from apps.user.value_objects import Role
-from .models import PasswordResetToken
+from apps.authentication.models import PasswordResetToken
+from django.utils import timezone
 
 
 class SignUpValidator(serializers.Serializer):
@@ -58,3 +59,25 @@ class ForgotPasswordValidator(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("If email exists, a reset link will be sent.")
         return value
+
+
+class ResetPasswordValidator(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        token = attrs.get("token")
+
+        try:
+            reset_token = PasswordResetToken.objects.select_related("user").get(token=token)
+        except PasswordResetToken.DoesNotExist:
+            raise serializers.ValidationError("invalid_token")
+
+        if reset_token.is_expired():
+            reset_token.delete()
+            raise serializers.ValidationError("token_expired")
+
+        attrs["user"] = reset_token.user
+        attrs["reset_token"] = reset_token
+
+        return attrs

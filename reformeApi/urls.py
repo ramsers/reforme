@@ -18,7 +18,7 @@ from django.urls import include, path
 from rest_framework import routers
 
 from apps.user.views import UserViewSet
-from apps.authentication.views import SignUpAPI, LoginAPI, ForgotPassword
+from apps.authentication.views import SignUpAPI, LoginAPI, ForgotPasswordAPI, ResetPasswordAPI
 from apps.classes.views import ClassesViewSet
 from apps.booking.views import BookingViewSet
 from apps.payment.views import CreatePurchaseIntentApi, ListProductApi, StripeWebhookApi, CancelSubscriptionApi
@@ -27,7 +27,8 @@ from apps.payment.views import CreatePurchaseIntentApi, ListProductApi, StripeWe
 authentication_patterns = [
     path('sign-up', SignUpAPI.as_view(), name="sign-up"),
     path('login', LoginAPI.as_view(), name="login"),
-    path('forgot-password', ForgotPassword.as_view(), name="forgot-password")
+    path('forgot-password', ForgotPasswordAPI.as_view(), name="forgot-password"),
+    path('reset-password', ResetPasswordAPI.as_view(), name="reset-password")
 ]
 
 payment_patterns = [

@@ -8,6 +8,7 @@ from apps.classes.models import Classes
 from apps.booking.models import Booking
 from django.utils import timezone
 from apps.payment.models import PassPurchase
+from apps.authentication.models import PasswordResetToken
 
 User = get_user_model()
 
@@ -96,4 +97,22 @@ def sample_class(db, instructor_user):
 @pytest.fixture
 def sample_booking(db, client_user, sample_class):
     return Booking.objects.create(client=client_user, booked_class=sample_class)
+
+
+@pytest.fixture
+def user_with_reset_token(db):
+    user = User.objects.create(
+        email="reset@example.com",
+        name="Reset User",
+        role=Role.CLIENT,
+    )
+    user.set_password("OldPassword123!")
+    user.save()
+
+    token = PasswordResetToken.objects.create(
+        user=user,
+        token=PasswordResetToken.generate_token(),
+    )
+
+    return user, token.token
 
