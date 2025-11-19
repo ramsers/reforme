@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, date, datetime, time
 from django.db.models import Q
 from django.utils import timezone
 
@@ -8,85 +8,82 @@ from apps.classes.events.event_dispatchers import class_event_dispatcher
 from dateutil.relativedelta import relativedelta
 
 
-def generate_recurring_classes(base_class: Classes, count: int = 10):
-    rec_type = base_class.recurrence_type
-    rec_days = base_class.recurrence_days or []
-    start_date = base_class.date
-    now = timezone.now()
-
-    existing_dates = set(
-        Classes.objects.filter(
-            instructor=base_class.instructor,
-            title=base_class.title,
-            recurrence_type=rec_type,
-        ).values_list("date", flat=True)
-    )
-
+def build_recurring_schedule(
+    root_class: Classes,
+    start_date: date,
+    metadata_overrides: dict | None = None,
+    max_instances: int = 10,
+):
+    metadata_overrides = metadata_overrides or {}
+    rec_type = root_class.recurrence_type
+    rec_days = root_class.recurrence_days or []
+    today = timezone.now().date()
     future_instances = []
+    occurrences = 0
 
-    for i in range(1, count + 1):
-        if rec_type == "WEEKLY" and rec_days:
-            for day in rec_days:
-                day_offset = (day - start_date.weekday()) % 7 + 7 * (i - 1)
-                next_date = start_date + timedelta(days=day_offset)
+    if isinstance(start_date, datetime):
+        start_date = start_date.date()
 
-                if next_date in existing_dates or next_date <= now:
+    def make_instance(for_date):
+        parent_dt = root_class.date
+
+        child_dt = parent_dt.replace(
+            year=for_date.year,
+            month=for_date.month,
+            day=for_date.day,
+        )
+
+        instance = Classes(
+            title=root_class.title,
+            description=root_class.description,
+            size=root_class.size,
+            date=child_dt,
+            instructor=root_class.instructor,
+            parent_class=root_class,
+            recurrence_type=None,
+            recurrence_days=None,
+        )
+        for field, value in metadata_overrides.items():
+            setattr(instance, field, value)
+        return instance
+
+    if rec_type == "WEEKLY":
+        if not rec_days:
+            return []
+
+        current = start_date
+
+        while occurrences < max_instances:
+            for offset in range(1, 8):
+                dt = current + timedelta(days=offset)
+
+                if dt <= today:
                     continue
 
-                future_instances.append(
-                    Classes(
-                        title=base_class.title,
-                        description=base_class.description,
-                        size=base_class.size,
-                        date=next_date,
-                        instructor=base_class.instructor,
-                        recurrence_type=None,
-                        recurrence_days=None,
-                        parent_class=base_class,
-                    )
-                )
-            continue
+                if dt.weekday() not in rec_days:
+                    continue
 
-        elif rec_type == "MONTHLY":
-            next_date = start_date + relativedelta(months=i)
+                future_instances.append(make_instance(dt))
+                occurrences += 1
 
-            if next_date in existing_dates or next_date <= now:
-                continue
+                if occurrences >= max_instances:
+                    break
 
-            future_instances.append(
-                Classes(
-                    title=base_class.title,
-                    description=base_class.description,
-                    size=base_class.size,
-                    date=next_date,
-                    instructor=base_class.instructor,
-                    parent_class=base_class,
-                )
-            )
+            current += timedelta(days=7)
 
-        elif rec_type == "YEARLY":
-            next_date = start_date + relativedelta(years=i)
+    elif rec_type == "MONTHLY":
+        for i in range(1, max_instances + 1):
+            dt = start_date + relativedelta(months=i)
+            if dt > today:
+                future_instances.append(make_instance(dt))
 
-            if next_date in existing_dates or next_date <= now:
-                continue
+    elif rec_type == "YEARLY":
+        for i in range(1, max_instances + 1):
+            dt = start_date + relativedelta(years=i)
+            if dt > today:
+                future_instances.append(make_instance(dt))
 
-            future_instances.append(
-                Classes(
-                    title=base_class.title,
-                    description=base_class.description,
-                    size=base_class.size,
-                    date=next_date,
-                    instructor=base_class.instructor,
-                    parent_class=base_class,
-                )
-            )
-
-        else:
-            continue
-
-    if future_instances:
-        Classes.objects.bulk_create(future_instances)
-
+    return future_instances
 
 
 def collect_field_updates(command):
@@ -121,12 +118,25 @@ def detect_datetime_change(fields_to_update, old_date):
     return new_date.date() != old_date.date(), new_date.time() != old_date.time()
 
 
-def regenerate_future_classes(root_class, class_to_update):
+def regenerate_future_classes(root_class: Classes, starting_from: Classes,  metadata_overrides=None):
+
+    print("regenerating future classes =================", metadata_overrides)
+    metadata_overrides = metadata_overrides or {}
+
     Classes.objects.filter(
-        Q(parent_class=root_class) | Q(id=root_class.id),
-        date__gt=class_to_update.date
+        parent_class=root_class,
+        date__gte=starting_from.date,
     ).delete()
-    generate_recurring_classes(root_class)
+
+    new_instances = build_recurring_schedule(
+        root_class=root_class,
+        start_date=starting_from.date.date(),
+        metadata_overrides=metadata_overrides,
+        max_instances=10,
+    )
+
+    if new_instances:
+        Classes.objects.bulk_create(new_instances)
 
 
 def shift_future_class_times(root_class, class_to_update, new_datetime):
@@ -153,3 +163,11 @@ def emit_reschedule_event(cls, update_series: bool, recurrence_change=False):
     )
     class_event_dispatcher.dispatch(event)
 
+
+def propagate_non_date_fields(root_class, class_to_update, non_date_fields):
+    if not non_date_fields:
+        return
+    Classes.objects.filter(
+        parent_class=root_class,
+        date__gte=class_to_update.date
+    ).update(**non_date_fields)
