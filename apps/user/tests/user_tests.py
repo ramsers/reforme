@@ -5,6 +5,8 @@ from apps.user.models import User
 from rest_framework import status
 
 users_endpoint = "/users"
+pytestmark = pytest.mark.django_db
+
 
 def test_create_user_successfully(admin_client):
     payload = {

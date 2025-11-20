@@ -7,7 +7,8 @@ from apps.user.models import Role, User
 from apps.payment.models import PassPurchase
 
 
-@pytest.mark.django_db
+pytestmark = pytest.mark.django_db
+
 def test_duplicate_checkout_events_are_ignored(api_client, monkeypatch):
     user = User.objects.create(email='duplicate@example.com', name='Client', role=Role.CLIENT)
     user.set_password('testpass123!')

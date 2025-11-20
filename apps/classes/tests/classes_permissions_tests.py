@@ -7,8 +7,8 @@ import pytest
 
 
 classes_endpoint = "/classes"
+pytestmark = pytest.mark.django_db
 
-pytestmark = pytest.mark.django_db(transaction=True)
 
 def test_create_class_permissions(admin_client, instructor_client, client_client):
     admin, admin_user = admin_client

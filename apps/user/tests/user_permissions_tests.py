@@ -3,6 +3,7 @@ from apps.user.value_objects import Role
 from rest_framework import status
 
 users_endpoint = "/users"
+pytestmark = pytest.mark.django_db
 
 
 def test_user_create_permissions(admin_client, instructor_client, client_client):

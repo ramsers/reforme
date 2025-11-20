@@ -10,7 +10,7 @@ import pytest
 from apps.classes.services.class_update_services import regenerate_future_classes
 
 
-pytestmark = pytest.mark.django_db(transaction=True)
+pytestmark = pytest.mark.django_db
 
 classes_endpoint = "/classes"
 

@@ -7,7 +7,8 @@ from django.utils import timezone
 from apps.payment.models import PassPurchase
 
 
-@pytest.mark.django_db
+pytestmark = pytest.mark.django_db(transaction=True)
+
 def test_cancel_subscription_flow_successfully(api_client, client_client, monkeypatch):
     client, user = client_client
 
@@ -85,7 +86,6 @@ def test_cancel_subscription_flow_successfully(api_client, client_client, monkey
     assert purchase.is_active is False
 
 
-@pytest.mark.django_db
 def test_create_purchase_intent_with_invalid_data_should_fail(client_client, monkeypatch):
     client, _ = client_client
 

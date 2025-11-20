@@ -3,6 +3,8 @@ from rest_framework import status
 from apps.booking.models import Booking
 
 bookings_endpoint = "/bookings"
+pytestmark = pytest.mark.django_db
+
 
 def test_create_booking_permissions(admin_client, instructor_client, client_client, sample_class):
     admin, admin_user = admin_client
