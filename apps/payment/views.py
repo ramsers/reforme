@@ -15,6 +15,7 @@ from apps.payment.services.webhook_handlers import (
     WebhookError,
 )
 import os
+from apps.payment.validators import CancelSubscriptionValidator, CreatePurchaseIntentValidator
 
 
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
@@ -25,6 +26,8 @@ class CreatePurchaseIntentApi(APIView):
 
     def post(self, request):
         user = request.user
+        validator = CreatePurchaseIntentValidator(data=request.data)
+        validator.is_valid(raise_exception=True)
 
         command = CreatePurchaseIntentCommand(user_id=user.id, **request.data)
         purchase_intent = payment_command_bus.handle(command)
@@ -58,7 +61,11 @@ class CancelSubscriptionApi(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        command = CancelSubscriptionCommand(purchase_id=pk)
+        validator = CancelSubscriptionValidator(data={"purchase_id": pk}, context={"user": request.user})
+        validator.is_valid(raise_exception=True)
+
+        print('TEST VALIDATOR ===============', validator.validated_data.get('purchase_id'), flush=True)
+        command = CancelSubscriptionCommand(purchase_id=validator.validated_data.get('purchase_id'))
         payment_command_bus.handle(command)
 
         return Response({"message": "Subscription set to cancel at period end."}, status=status.HTTP_200_OK)

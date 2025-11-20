@@ -121,10 +121,10 @@ def handle_update_subscription_cancellation(command: CancelSubscriptionWebhookCo
                 purchase.is_cancel_requested = True
 
             if command.status_stripe == "canceled":
-                purchase.is_active = False
+                purchase.active = False
                 purchase.is_cancel_requested = False
 
-            purchase.save(update_fields=["is_active", "is_cancel_requested"])
+            purchase.save(update_fields=["active", "is_cancel_requested"])
 
     except Exception as e:
-        print("❌ Error updating subscription status:", e, flush=True)
+        print("Error updating subscription status:", e, flush=True)

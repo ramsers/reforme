@@ -267,7 +267,7 @@ def test_partial_update_weekly_class_updates_series_and_regenerates_children(adm
         assert (c.date.hour, c.date.minute) == parent_time
 
 
-def test_delete_child_class_removes_it_and_future_classes(admin_client, instructor_user):
+def test_delete_child_class_removes_future_classes_successfully(admin_client, instructor_user):
     admin, _ = admin_client
 
     start_date = timezone.now() + timezone.timedelta(days=1)
@@ -278,7 +278,7 @@ def test_delete_child_class_removes_it_and_future_classes(admin_client, instruct
         "date": start_date.isoformat(),
         "instructor_id": str(instructor_user.id),
         "recurrence_type": ClassRecurrenceType.WEEKLY,
-        "recurrence_days": [0, 2],  # Monday & Wednesday
+        "recurrence_days": [0, 2],
     }
 
     create_response = admin.post("/classes", payload, format="json")
@@ -286,7 +286,7 @@ def test_delete_child_class_removes_it_and_future_classes(admin_client, instruct
 
     parent_class = Classes.objects.get(id=create_response.data["id"])
     children_before = list(parent_class.child_classes.order_by("date"))
-    assert len(children_before) > 4, "Expected multiple recurring children before deletion"
+    assert len(children_before) > 4
 
     early_child = children_before[1]
 
@@ -430,7 +430,7 @@ def test_update_series_time_only_shifts_future_occurrences(admin_client, instruc
     original_child_dates = {
         c.id: c.date for c in parent_class.child_classes.order_by("date")
     }
-    assert original_child_dates, "Future recurring children should exist"
+    assert original_child_dates
 
     new_datetime = parent_class.date.replace(hour=11, minute=30)
     payload = {
@@ -455,3 +455,40 @@ def test_update_series_time_only_shifts_future_occurrences(admin_client, instruc
 
         assert child.date.hour == 11
         assert child.date.minute == 30
+
+
+def test_create_weekly_class_requires_recurrence_days(admin_client, instructor_user):
+    admin, _ = admin_client
+    payload = {
+        "title": "Weekly Pilates",
+        "description": "Every Monday and Wednesday morning.",
+        "size": 10,
+        "date": (timezone.now() + timezone.timedelta(days=1)).isoformat(),
+        "instructor_id": str(instructor_user.id),
+        "recurrence_type": ClassRecurrenceType.WEEKLY,
+    }
+
+    response = admin.post(classes_endpoint, payload, format="json")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "recurrence_days" in response.data
+    assert response.data["recurrence_days"][0] == "This field is required when recurrence_type is WEEKLY."
+
+
+def test_create_non_weekly_class_rejects_recurrence_days(admin_client, instructor_user):
+    admin, _ = admin_client
+    payload = {
+        "title": "Monthly Pilates",
+        "description": "Monthly with bad days",
+        "size": 10,
+        "date": (timezone.now() + timezone.timedelta(days=3)).isoformat(),
+        "instructor_id": str(instructor_user.id),
+        "recurrence_type": ClassRecurrenceType.MONTHLY,
+        "recurrence_days": [0, 2],
+    }
+
+    response = admin.post(classes_endpoint, payload, format="json")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "recurrence_days" in response.data
+    assert response.data["recurrence_days"][0] == "This field is only allowed when recurrence_type is WEEKLY."
