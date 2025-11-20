@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from apps.user.models import User
-from apps.user.serializers import UserSerializer
-from apps.classes.models import Classes
 from apps.booking.models import Booking
 from apps.user.value_objects import Role
 from django.utils import timezone
 from apps.payment.models import PassPurchase
+from apps.user.selectors.selectors import get_user_by_id
+from apps.classes.selectors.selectors import get_class_by_id
+from apps.booking.selectors.selectors import get_booking_by_id
 
 
 
@@ -15,7 +15,7 @@ class CreateBookingValidator(serializers.Serializer):
 
     def validate_client_id(self, value):
         booker = self.context.get('booker')
-        client = User.objects.get(id=value)
+        client = get_user_by_id(value)
 
         if client.id != booker.id and booker.role != Role.ADMIN:
             raise serializers.ValidationError("not_allowed")
@@ -26,7 +26,7 @@ class CreateBookingValidator(serializers.Serializer):
         booker = self.context.get('booker')
         client_id = attrs.get("client_id")
         class_id = attrs.get("class_id")
-        booked_class = Classes.objects.get(id=class_id)
+        booked_class = get_class_by_id(class_id)
 
         if Booking.objects.filter(client_id=client_id, booked_class_id=class_id).exists():
             raise serializers.ValidationError("already_booked")
@@ -54,7 +54,7 @@ class DeleteBookingValidator(serializers.Serializer):
     booking_id = serializers.UUIDField(required=True, allow_null=False)
 
     def validate_booking_id(self, value):
-        booking_to_delete = Booking.objects.get(id=value)
+        booking_to_delete = get_booking_by_id(value)
         client = self.context.get('client')
 
         if booking_to_delete.client.id != client.id and client.role != Role.ADMIN:

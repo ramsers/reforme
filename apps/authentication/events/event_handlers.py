@@ -2,10 +2,11 @@ from apps.authentication.events.events import UserSignupEvent, SendPasswordReset
 from apps.user.models import User
 from apps.core.email_service import send_html_email
 import os
+from apps.user.selectors.selectors import get_user_by_id
 
 
 def handle_send_sign_up_email(event: UserSignupEvent):
-    user: User = User.objects.get(id=event.user_id)
+    user: User = get_user_by_id(id=event.user_id)
 
     send_html_email(
         subject=f"Welcome to Reforme {user.name}",

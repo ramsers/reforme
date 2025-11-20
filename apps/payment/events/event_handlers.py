@@ -1,10 +1,11 @@
 from apps.payment.events.events import PaymentSuccessEvent, SubscriptionCancellationEvent
 from apps.user.models import User
 from apps.core.email_service import send_html_email
+from apps.user.selectors.selectors import get_user_by_id
 
 
 def send_payment_success_email(event: PaymentSuccessEvent):
-    user: User = User.objects.get(id=event.user_id)
+    user: User = get_user_by_id(event.user_id)
 
     send_html_email(
         subject="Purchase successful!",
@@ -18,7 +19,7 @@ def send_payment_success_email(event: PaymentSuccessEvent):
 
 
 def send_subscription_cancelled_email(event: SubscriptionCancellationEvent):
-    user: User = User.objects.get(id=event.user_id)
+    user: User = get_user_by_id(event.user_id)
 
     send_html_email(
         subject="Subscription canceled!",

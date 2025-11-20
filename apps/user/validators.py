@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.user.models import User
+from apps.user.selectors.selectors import get_user_by_id
 from apps.user.value_objects import Role
 
 
@@ -36,7 +37,7 @@ class UpdateUserValidator(serializers.Serializer):
 
     def validate_id(self, value):
         user = self.context.get('user')
-        user_to_update = User.objects.get(id=value)
+        user_to_update = get_user_by_id(value)
 
         if user_to_update.id != user.id and user.role != Role.ADMIN:
             raise serializers.ValidationError("not_allowed")

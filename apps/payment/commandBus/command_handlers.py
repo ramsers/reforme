@@ -1,6 +1,5 @@
 from apps.payment.commandBus.commands import (CreatePurchaseIntentCommand, CreatePassPurchaseCommand,
                                               CancelSubscriptionWebhookCommand, CancelSubscriptionCommand)
-from apps.user.models import User
 import stripe
 import os
 from apps.payment.models import PassPurchase
@@ -9,11 +8,13 @@ from apps.payment.events.events import PaymentSuccessEvent
 from datetime import timedelta
 from django.utils import timezone
 from apps.payment.events.events import SubscriptionCancellationEvent
+from apps.user.selectors.selectors import get_user_by_id
+
 
 def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
-    user = User.objects.get(id=command.user_id)
-    if command.is_subscription:
+    user = get_user_by_id(command.user_id)
 
+    if command.is_subscription:
         checkout_session = stripe.checkout.Session.create(
             customer_email=user.email,
             payment_method_types=["card"],
@@ -49,7 +50,7 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
         return payment_intent.client_secret
 
 def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
-    user = User.objects.get(id=command.user_id)
+    user = get_user_by_id(command.user_id)
 
     if command.stripe_idempotency_key:
         existing_purchase = PassPurchase.objects.filter(
