@@ -27,7 +27,7 @@ class CreateClassesValidator(serializers.Serializer):
 class PartialUpdateClassesValidator(serializers.Serializer):
     title = serializers.CharField(required=False, allow_null=True, max_length=45)
     description = serializers.CharField(required=False, allow_null=True, max_length=255)
-    size = serializers.IntegerField(required=True, allow_null=False, min_value=1)
+    size = serializers.IntegerField(required=False, allow_null=True, min_value=1)
     date = serializers.DateTimeField(required=False, allow_null=True)
     instructor_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     recurrence_type = serializers.ChoiceField(

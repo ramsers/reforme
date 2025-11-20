@@ -22,7 +22,7 @@ def test_create_class_permissions(admin_client, instructor_client, client_client
         "date": (timezone.now() + timezone.timedelta(days=1)).isoformat(),
         "instructor_id": str(instructor_user.id),
         "recurrence_type": None,
-        "recurrence_days": [],
+        "recurrence_days": None,
     }
 
     admin_response = admin.post(classes_endpoint, payload, format="json")

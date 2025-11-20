@@ -25,7 +25,7 @@ def handle_create_user(command: CreateUserCommand):
 
 
 def handle_update_user(command: UpdateUserCommand):
-    user = get_user_by_id(command.user_id)
+    user = get_user_by_id(command.id)
 
     if command.name:
         user.name = command.name

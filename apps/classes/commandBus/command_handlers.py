@@ -5,6 +5,8 @@ import copy
 from django.db.models import Q
 import datetime
 from datetime import timedelta
+
+from apps.classes.selectors.selectors import get_class_by_id
 from apps.classes.services.class_update_services import (build_recurring_schedule,
                                                          recurrence_changed, regenerate_future_classes,
                                                          detect_datetime_change, emit_reschedule_event,
@@ -48,7 +50,7 @@ def handle_create_class(command: CreateClassCommand):
 
 
 def handle_partial_update_class(command: PartialUpdateClassCommand):
-    cls = Classes.objects.get(id=command.id)
+    cls = get_class_by_id(command.id)
 
     old_date = cls.date
     old_rec_type = cls.recurrence_type
