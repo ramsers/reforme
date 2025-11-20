@@ -9,6 +9,10 @@ from datetime import timedelta
 from django.utils import timezone
 from apps.payment.events.events import SubscriptionCancellationEvent
 from apps.user.selectors.selectors import get_user_by_id
+import logging
+from apps.payment.selectors.selectors import get_pass_purchase_by_id
+
+logger = logging.getLogger(__name__)
 
 
 def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
@@ -97,7 +101,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
 
 def handle_cancel_subscription(command: CancelSubscriptionCommand):
     try:
-        purchase = PassPurchase.objects.get(id=command.purchase_id)
+        purchase = get_pass_purchase_by_id(command.purchase_id)
 
         stripe.Subscription.modify(
             purchase.stripe_subscription_id,
@@ -110,9 +114,10 @@ def handle_cancel_subscription(command: CancelSubscriptionCommand):
         event = SubscriptionCancellationEvent(user_id=purchase.user.id, end_date=purchase.end_date.date())
         payment_event_dispatcher.dispatch(event)
     except PassPurchase.DoesNotExist:
-        print({"error": "Purchase not found."}, flush=True)
+        logger.error("Purchase with id %s not found when cancelling subscription.", command.purchase_id)
     except Exception as e:
-        print({"error": str(e)}, flush=True)
+        logger.exception("Unexpected error cancelling subscription %s", command.purchase_id)
+
 
 def handle_update_subscription_cancellation(command: CancelSubscriptionWebhookCommand):
     try:
@@ -128,4 +133,4 @@ def handle_update_subscription_cancellation(command: CancelSubscriptionWebhookCo
             purchase.save(update_fields=["active", "is_cancel_requested"])
 
     except Exception as e:
-        print("Error updating subscription status:", e, flush=True)
+        logger.exception("Error updating subscription status for %s", command.subscription_id)
