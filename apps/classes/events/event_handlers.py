@@ -1,5 +1,6 @@
 from django.db.models import Q, F
 from apps.classes.models import Classes
+from apps.classes.selectors.selectors import get_class_by_id
 from apps.core.email_service import send_html_email
 from apps.classes.events.events import RescheduleClassEvent, DeletedClassEvent
 
@@ -52,7 +53,7 @@ def handle_class_rescheduled_event(event: RescheduleClassEvent):
 
 
 def handle_class_deleted_event(event: DeletedClassEvent):
-    cls = Classes.objects.get(id=event.class_id)
+    cls = get_class_by_id(event.class_id)
 
     bookings = (
         cls.bookings

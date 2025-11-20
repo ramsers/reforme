@@ -2,6 +2,8 @@ from rest_framework import serializers
 from apps.user.models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
+
+from apps.user.selectors.selectors import get_user_by_email
 from apps.user.value_objects import Role
 from apps.authentication.models import PasswordResetToken
 from django.utils import timezone
@@ -38,9 +40,9 @@ class LoginValidator(serializers.Serializer):
         if not email or not password:
             raise serializers.ValidationError("Email and password are required.")
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+
+        user = get_user_by_email(email)
+        if not user:
             raise serializers.ValidationError("User not found")
 
         if not check_password(password, user.password):
@@ -54,9 +56,9 @@ class ForgotPasswordValidator(serializers.Serializer):
     email = serializers.EmailField(required=True, allow_null=False)
 
     def validate_email(self, value):
-        try:
-            User.objects.get(email=value)
-        except User.DoesNotExist:
+        user = get_user_by_email(value)
+
+        if not user:
             raise serializers.ValidationError("If email exists, a reset link will be sent.")
         return value
 

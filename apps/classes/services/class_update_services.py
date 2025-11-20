@@ -119,8 +119,6 @@ def detect_datetime_change(fields_to_update, old_date):
 
 
 def regenerate_future_classes(root_class: Classes, starting_from: Classes,  metadata_overrides=None):
-
-    print("regenerating future classes =================", metadata_overrides)
     metadata_overrides = metadata_overrides or {}
 
     Classes.objects.filter(

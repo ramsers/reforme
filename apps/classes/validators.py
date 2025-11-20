@@ -45,7 +45,6 @@ class PartialUpdateClassesValidator(serializers.Serializer):
         return _validate_recurrence_rules(attrs)
 
 
-
 def _validate_recurrence_rules(attrs):
     recurrence_type = attrs.get("recurrence_type")
     recurrence_days = attrs.get("recurrence_days")

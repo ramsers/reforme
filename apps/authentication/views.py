@@ -67,9 +67,9 @@ class ResetPasswordAPI(APIView):
         validator = ResetPasswordValidator(data={**request.data})
         validator.is_valid(raise_exception=True)
 
-        user = validator.validated_data["user"]
-        password = validator.validated_data["password"]
-        reset_token = validator.validated_data["reset_token"]
+        user = validator.validated_data.get("user")
+        password = validator.validated_data.get("password")
+        reset_token = validator.validated_data.get("reset_token")
 
         command = ResetPasswordCommand(
             user=user,

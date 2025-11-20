@@ -64,7 +64,6 @@ class CancelSubscriptionApi(APIView):
         validator = CancelSubscriptionValidator(data={"purchase_id": pk}, context={"user": request.user})
         validator.is_valid(raise_exception=True)
 
-        print('TEST VALIDATOR ===============', validator.validated_data.get('purchase_id'), flush=True)
         command = CancelSubscriptionCommand(purchase_id=validator.validated_data.get('purchase_id'))
         payment_command_bus.handle(command)
 
