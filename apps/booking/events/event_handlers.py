@@ -1,4 +1,3 @@
-from apps.booking.booking.selectors import get_booking_by_id
 from apps.booking.events.events import CreateBookingEvent, DeleteBookingEvent
 from apps.booking.models import Booking
 from apps.core.email_service import send_html_email
