@@ -1,6 +1,7 @@
 from conftest import admin_client, instructor_client, client_client, sample_class, sample_booking
 from rest_framework import status
 from apps.booking.models import Booking
+import pytest
 
 bookings_endpoint = "/bookings"
 pytestmark = pytest.mark.django_db

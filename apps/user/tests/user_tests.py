@@ -3,6 +3,7 @@ from apps.user.value_objects import Role
 from rest_framework import status
 from apps.user.models import User
 from rest_framework import status
+import pytest
 
 users_endpoint = "/users"
 pytestmark = pytest.mark.django_db

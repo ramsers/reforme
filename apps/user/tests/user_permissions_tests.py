@@ -1,6 +1,7 @@
 from conftest import admin_client, instructor_client, client_client
 from apps.user.value_objects import Role
 from rest_framework import status
+import pytest
 
 users_endpoint = "/users"
 pytestmark = pytest.mark.django_db
