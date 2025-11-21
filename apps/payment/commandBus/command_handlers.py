@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
     user = get_user_by_id(command.user_id)
+    subscription_redirect = command.redirect_url if command.redirect_url else os.environ.get('PAYMENT_REDIRECT')
 
     if command.is_subscription:
         checkout_session = stripe.checkout.Session.create(
@@ -27,8 +28,8 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
                 "quantity": 1,
             }],
             mode="subscription",
-            success_url=os.environ.get('PAYMENT_REDIRECT'),
-            cancel_url=os.environ.get('PAYMENT_REDIRECT'),
+            success_url=subscription_redirect,
+            cancel_url=subscription_redirect,
             metadata={
                 "user_id": user.id,
                 "product_name": command.product_name,
@@ -69,7 +70,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
 
     if command.is_subscription:
         pass_purchase = PassPurchase.objects.create(
-            user=user,
+            user_id=user.id,
             stripe_checkout_id=command.stripe_checkout_id,
             stripe_customer_id=command.stripe_customer_id,
             stripe_price_id=command.stripe_price_id,

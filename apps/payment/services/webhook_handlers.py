@@ -72,24 +72,25 @@ class StripeWebhookHandler:
             is_subscription = event_type == "checkout.session.completed"
             idempotency_key = metadata.get("event_id") or event.get("id")
 
-            command = CreatePassPurchaseCommand(
-                user_id=metadata.get("user_id"),
-                product_name=metadata.get("product_name"),
-                is_subscription=is_subscription,
-                stripe_checkout_id=data_object.get("id") if is_subscription else None,
-                stripe_payment_intent=data_object.get("id") if not is_subscription else None,
-                stripe_price_id=metadata.get("price_id"),
-                stripe_product_id=metadata.get("product_id"),
-                stripe_customer_id=data_object.get("customer") if is_subscription else None,
-                stripe_subscription_id=data_object.get("subscription") if is_subscription else None,
-                duration_days=metadata.get("duration_days", 0),
-                active=True,
-                stripe_idempotency_key=idempotency_key,
-            )
+            if data_object and metadata:
+                command = CreatePassPurchaseCommand(
+                    user_id=metadata.get("user_id"),
+                    product_name=metadata.get("product_name"),
+                    is_subscription=is_subscription,
+                    stripe_checkout_id=data_object.get("id") if is_subscription else None,
+                    stripe_payment_intent=data_object.get("id") if not is_subscription else None,
+                    stripe_price_id=metadata.get("price_id"),
+                    stripe_product_id=metadata.get("product_id"),
+                    stripe_customer_id=data_object.get("customer") if is_subscription else None,
+                    stripe_subscription_id=data_object.get("subscription") if is_subscription else None,
+                    duration_days=metadata.get("duration_days", 0),
+                    active=True,
+                    stripe_idempotency_key=idempotency_key,
+                )
 
-            pass_purchase = payment_command_bus.handle(command)
-            serializer = PassPurchaseSerializer(pass_purchase)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+                pass_purchase = payment_command_bus.handle(command)
+                serializer = PassPurchaseSerializer(pass_purchase)
+                return Response(serializer.data, status=status.HTTP_200_OK)
 
         if event_type in ("customer.subscription.updated", "customer.subscription.deleted"):
             subscription_id = data_object.get("id") or data_object.get("subscription")

@@ -1,5 +1,6 @@
 import typing
 
+
 class CreatePurchaseIntentCommand(typing.NamedTuple):
     user_id: str
     price_id: str
@@ -8,6 +9,7 @@ class CreatePurchaseIntentCommand(typing.NamedTuple):
     price_amount: int
     currency: str
     duration_days: int
+    redirect_url: str | None = None
 
 
 class CreatePassPurchaseCommand(typing.NamedTuple):

@@ -10,6 +10,12 @@ class CreatePurchaseIntentValidator(serializers.Serializer):
     price_amount = serializers.IntegerField(min_value=1)
     currency = serializers.CharField(max_length=10)
     duration_days = serializers.IntegerField(min_value=1)
+    redirect_url = serializers.URLField(
+        required=False,
+        allow_null=True,
+        allow_blank=True
+    )
+
 
 
 class CancelSubscriptionValidator(serializers.Serializer):
