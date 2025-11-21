@@ -17,7 +17,6 @@ class CreatePurchaseIntentValidator(serializers.Serializer):
     )
 
 
-
 class CancelSubscriptionValidator(serializers.Serializer):
     purchase_id = serializers.UUIDField(required=True)
 

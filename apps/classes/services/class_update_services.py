@@ -97,6 +97,8 @@ def collect_field_updates(command):
         fields['size'] = command.size
     if command.date is not None:
         fields['date'] = command.date
+    if command.instructor_id is not None:
+        fields['instructor_id'] = command.instructor_id
     if command.recurrence_type is not None:
         fields['recurrence_type'] = command.recurrence_type
     if command.recurrence_days is not None:

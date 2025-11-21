@@ -63,7 +63,7 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
     non_schedule_fields = {
         name: value
         for name, value in fields.items()
-        if name not in ["date", "recurrence_type", "recurrence_days"]
+        if name not in ["date", "recurrence_type", "recurrence_days", "instructor_id"]
     }
 
     if not command.update_series:
@@ -102,6 +102,7 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
 
     if non_schedule_fields:
         propagate_non_date_fields(root, cls, non_schedule_fields)
+
 
     return cls
 
