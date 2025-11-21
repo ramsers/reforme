@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from apps.classes.models import Classes
+from apps.classes.value_objects import ClassRecurrenceType
 
 
 @shared_task
@@ -16,13 +17,11 @@ def extend_future_classes():
         next_date = base_class.date
 
         while next_date <= cutoff_date:
-            if base_class.recurrence_type == 'DAILY':
-                next_date += timedelta(days=1)
-            elif base_class.recurrence_type == 'WEEKLY':
+            if base_class.recurrence_type == ClassRecurrenceType.WEEKLY:
                 next_date += timedelta(weeks=1)
-            elif base_class.recurrence_type == 'MONTHLY':
+            elif base_class.recurrence_type == ClassRecurrenceType.MONTHLY:
                 next_date += relativedelta(months=1)
-            elif base_class.recurrence_type == 'YEARLY':
+            elif base_class.recurrence_type == ClassRecurrenceType.YEARLY:
                 next_date += relativedelta(years=1)
             else:
                 break
