@@ -53,3 +53,15 @@ class UpdateUserValidator(serializers.Serializer):
                 raise serializers.ValidationError({"email": "This email is already in use."})
 
         return attrs
+
+
+class DeleteUserValidator(serializers.Serializer):
+    id = serializers.UUIDField(required=True, allow_null=False)
+
+    def validate_id(self, value):
+        user_to_delete = get_user_by_id(value)
+
+        if not user_to_delete:
+            raise serializers.ValidationError("user_not_found")
+
+        return value

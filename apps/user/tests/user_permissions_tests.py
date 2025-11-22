@@ -64,6 +64,7 @@ def test_get_all_instructors(admin_client, instructor_client, client_client):
     assert instructor_response.status_code == status.HTTP_403_FORBIDDEN
     assert client_response.status_code == status.HTTP_403_FORBIDDEN
 
+
 def test_get_all_clients(admin_client, instructor_client, client_client):
     instructors_endpoint = f"{users_endpoint}/all-clients"
 
@@ -78,6 +79,20 @@ def test_get_all_clients(admin_client, instructor_client, client_client):
     assert admin_response.status_code == status.HTTP_200_OK
     assert instructor_response.status_code == status.HTTP_403_FORBIDDEN
     assert client_response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_delete_user(instructor_client, client_client, admin_client):
+    instructor, instructor_user = instructor_client
+    client, client_user = client_client
+    admin, admin_user = admin_client
+
+    instructor_response = instructor.delete(f"{users_endpoint}/{client_user.id}/delete")
+    client_response = client.delete(f"{users_endpoint}/{client_user.id}/delete")
+    admin_response = admin.delete(f"{users_endpoint}/{client_user.id}/delete")
+
+    assert instructor_response.status_code == status.HTTP_403_FORBIDDEN
+    assert client_response.status_code == status.HTTP_403_FORBIDDEN
+    assert admin_response.status_code == status.HTTP_204_NO_CONTENT
 
 
 

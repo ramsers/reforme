@@ -33,6 +33,7 @@ class PartialUpdateClassesValidator(serializers.Serializer):
     recurrence_type = serializers.ChoiceField(
         required=False,
         allow_null=True,
+        allow_blank=True,
         choices=ClassRecurrenceType.choices
     )
     recurrence_days = serializers.ListField(
