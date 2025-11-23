@@ -513,7 +513,7 @@ def test_children_inherit_parent_recurrence(admin_client, instructor_user):
 
     parent_id = res.data["id"]
 
-    parent_res = admin.get(f"{classes_endpoint}{parent_id}/")
+    parent_res = admin.get(f"{classes_endpoint}/{parent_id}")
     parent = parent_res.data
 
     assert parent["recurrence_type"] == ClassRecurrenceType.WEEKLY
