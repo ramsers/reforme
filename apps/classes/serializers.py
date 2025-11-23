@@ -11,9 +11,21 @@ class ClassesSerializer(serializers.ModelSerializer):
     bookings_count = serializers.IntegerField(source="bookings.count", read_only=True)
     is_full = serializers.SerializerMethodField()
     bookings = BookingClientSerializer(source="bookings.all", many=True, read_only=True)
+    recurrence_type = serializers.SerializerMethodField()
+    recurrence_days = serializers.SerializerMethodField()
 
     def get_is_full(self, obj):
         return obj.bookings.count() >= int(obj.size)
+
+    def get_recurrence_type(self, obj):
+        if obj.parent_class:
+            return obj.parent_class.recurrence_type
+        return obj.recurrence_type
+
+    def get_recurrence_days(self, obj):
+        if obj.parent_class:
+            return obj.parent_class.recurrence_days
+        return obj.recurrence_days
 
     class Meta:
         model = Classes

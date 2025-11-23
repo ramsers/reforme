@@ -492,3 +492,39 @@ def test_create_non_weekly_class_rejects_recurrence_days(admin_client, instructo
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "recurrence_days" in response.data
     assert response.data["recurrence_days"][0] == "This field is only allowed when recurrence_type is WEEKLY."
+
+
+def test_children_inherit_parent_recurrence(admin_client, instructor_user):
+    admin, _ = admin_client
+    start_date = timezone.now() + timezone.timedelta(days=1)
+
+    payload = {
+        "title": "Weekly Pilates",
+        "description": "Every Monday and Wednesday morning.",
+        "size": 10,
+        "date": start_date.isoformat(),
+        "instructor_id": str(instructor_user.id),
+        "recurrence_type": ClassRecurrenceType.WEEKLY,
+        "recurrence_days": [0, 2],
+    }
+
+    res = admin.post(classes_endpoint, payload, format="json")
+    assert res.status_code == status.HTTP_201_CREATED
+
+    parent_id = res.data["id"]
+
+    parent_res = admin.get(f"{classes_endpoint}{parent_id}/")
+    parent = parent_res.data
+
+    assert parent["recurrence_type"] == ClassRecurrenceType.WEEKLY
+    assert parent["recurrence_days"] == [0, 2]
+
+    children_res = admin.get(f"{classes_endpoint}?parent_class_id={parent_id}")
+    children = children_res.data["results"]
+
+    assert len(children) > 0
+
+    for child in children:
+        assert child["recurrence_type"] == parent["recurrence_type"]
+        assert child["recurrence_days"] == parent["recurrence_days"]
+
