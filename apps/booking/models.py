@@ -9,4 +9,4 @@ class Booking(TimestampModel, UUIDModel):
     booked_class = models.ForeignKey(Classes, on_delete=models.CASCADE, related_name='bookings', null=True, blank=True)
 
     class Meta:
-        db_table = "booking"
+        db_table = "bookings"
