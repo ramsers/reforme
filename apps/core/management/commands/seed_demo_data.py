@@ -16,14 +16,14 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write(self.style.WARNING("Clearing previous demo data..."))
+        self.stdout.write(self.style.WARNING("Clearing previous seed data..."))
 
         Classes.objects.filter(title__startswith="[DEMO]").delete()
         PassPurchase.objects.filter(pass_name__startswith="[DEMO]").delete()
 
-        self.stdout.write(self.style.SUCCESS("Old demo data removed."))
+        self.stdout.write(self.style.SUCCESS("Old seed data removed."))
 
-        self.stdout.write(self.style.WARNING("Creating demo users..."))
+        self.stdout.write(self.style.WARNING("Creating users..."))
         admin = self._create_user(
             email="reforme_admin@gmail.com",
             name="Reforme Admin",
@@ -32,8 +32,8 @@ class Command(BaseCommand):
         )
 
         instructors_data = [
-            ("julia.thompson@reforme-demo.com", "Julia Thompson"),
-            ("marco.silvera@reforme-demo.com", "Marco Silvera"),
+            ("julia.thompson@reforme.com", "Julia Thompson"),
+            ("marco.silvera@reforme.com", "Marco Silvera"),
         ]
 
         instructors = [
@@ -62,7 +62,7 @@ class Command(BaseCommand):
 
         series_definitions = [
             {
-                "title": "[DEMO] Morning Pilates",
+                "title": "Morning Pilates",
                 "description": "Gentle morning Pilates for all levels.",
                 "hour": 9,
                 "recurrence_type": ClassRecurrenceType.WEEKLY,
@@ -70,7 +70,7 @@ class Command(BaseCommand):
                 "weeks_ahead": 4,
             },
             {
-                "title": "[DEMO] Evening Strength",
+                "title": "Evening Strength",
                 "description": "Full body strength conditioning.",
                 "hour": 18,
                 "recurrence_type": ClassRecurrenceType.WEEKLY,
@@ -142,7 +142,7 @@ class Command(BaseCommand):
             PassPurchase.objects.create(
                 user=client,
                 stripe_price_id="price_demo_sub_active",
-                pass_name="[DEMO] Monthly Unlimited",
+                pass_name="Monthly Unlimited",
                 is_subscription=True,
                 start_date=now - timedelta(days=7),
                 end_date=now + timedelta(days=23),
@@ -152,7 +152,7 @@ class Command(BaseCommand):
             PassPurchase.objects.create(
                 user=client,
                 stripe_price_id="price_demo_pack_expired",
-                pass_name="[DEMO] 5-Class Pack",
+                pass_name="5-Class Pack",
                 is_subscription=False,
                 start_date=now - timedelta(days=60),
                 end_date=now - timedelta(days=30),
