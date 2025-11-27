@@ -81,7 +81,7 @@ def build_recurring_schedule(
                 continue
 
             if current.day != start_date.day:
-                continue
+                break
 
             future_instances.append(make_instance(current))
             occurrences += 1
