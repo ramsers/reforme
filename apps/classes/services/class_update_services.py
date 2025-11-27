@@ -72,10 +72,19 @@ def build_recurring_schedule(
             current += timedelta(days=7)
 
     elif rec_type == "MONTHLY":
-        for i in range(1, max_instances + 1):
-            dt = start_date + relativedelta(months=i)
-            if dt > today:
-                future_instances.append(make_instance(dt))
+        current = start_date
+
+        while occurrences < max_instances:
+            current += relativedelta(months=1)
+
+            if current <= today:
+                continue
+
+            if current.day != start_date.day:
+                continue
+
+            future_instances.append(make_instance(current))
+            occurrences += 1
 
     elif rec_type == "YEARLY":
         for i in range(1, max_instances + 1):
