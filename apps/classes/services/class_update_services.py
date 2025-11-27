@@ -1,5 +1,6 @@
 from datetime import timedelta, date, datetime, time
 from django.db.models import Q
+import calendar
 from django.utils import timezone
 
 from apps.classes.models import Classes
@@ -71,19 +72,28 @@ def build_recurring_schedule(
 
             current += timedelta(days=7)
 
+
     elif rec_type == "MONTHLY":
+
         current = start_date
 
         while occurrences < max_instances:
-            current += relativedelta(months=1)
+            current = current + relativedelta(months=1)
+            year = current.year
+            month = current.month
+            target_day = start_date.day
+            last_day = calendar.monthrange(year, month)[1]
 
-            if current <= today:
+            if target_day > last_day:
                 continue
 
-            if current.day != start_date.day:
-                break
+            target_date = date(year, month, target_day)
 
-            future_instances.append(make_instance(current))
+            if target_date <= today:
+                continue
+
+            future_instances.append(make_instance(target_date))
+
             occurrences += 1
 
     elif rec_type == "YEARLY":
