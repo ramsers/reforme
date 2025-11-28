@@ -1,6 +1,5 @@
 from apps.payment.commandBus.commands import (CreatePurchaseIntentCommand, CreatePassPurchaseCommand,
                                               CancelSubscriptionWebhookCommand, CancelSubscriptionCommand)
-from apps.user.models import User
 import stripe
 import os
 from apps.payment.models import PassPurchase
@@ -9,11 +8,18 @@ from apps.payment.events.events import PaymentSuccessEvent
 from datetime import timedelta
 from django.utils import timezone
 from apps.payment.events.events import SubscriptionCancellationEvent
+from apps.user.selectors.selectors import get_user_by_id
+import logging
+from apps.payment.selectors.selectors import get_pass_purchase_by_id
+
+logger = logging.getLogger(__name__)
+
 
 def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
-    user = User.objects.get(id=command.user_id)
-    if command.is_subscription:
+    user = get_user_by_id(command.user_id)
+    subscription_redirect = command.redirect_url if command.redirect_url else os.environ.get('PAYMENT_REDIRECT')
 
+    if command.is_subscription:
         checkout_session = stripe.checkout.Session.create(
             customer_email=user.email,
             payment_method_types=["card"],
@@ -22,8 +28,8 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
                 "quantity": 1,
             }],
             mode="subscription",
-            success_url=os.environ.get('FRONTEND_URL'),
-            cancel_url=os.environ.get('FRONTEND_URL'),
+            success_url=subscription_redirect,
+            cancel_url=subscription_redirect,
             metadata={
                 "user_id": user.id,
                 "product_name": command.product_name,
@@ -31,11 +37,9 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
                 "duration_days": command.duration_days,
             },
         )
-        print('CHECKING THE SESSION ==============', checkout_session, flush=True)
 
         return checkout_session.url
     else:
-        print('PAYMENT INTENT ==============', command.price_amount, flush=True)
         payment_intent = stripe.PaymentIntent.create(
             amount=int(command.price_amount * 100),
             currency=command.currency,
@@ -51,21 +55,22 @@ def handle_create_purchase_intent(command: CreatePurchaseIntentCommand):
         return payment_intent.client_secret
 
 def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
-    user = User.objects.get(id=command.user_id)
+    user = get_user_by_id(command.user_id)
 
-    pass_purchase = None
+    if command.stripe_idempotency_key:
+        existing_purchase = PassPurchase.objects.filter(
+            stripe_idempotency_key=command.stripe_idempotency_key
+        ).first()
+        if existing_purchase:
+            return existing_purchase
 
     duration_days = int(command.duration_days)
 
-    # Compute start and end dates
-    start_date = timezone.now()
-    end_date = start_date + timedelta(days=duration_days) if duration_days > 0 else None
-
-    print('COMMAND USER ID BRO =====================', end_date, flush=True)
+    end_date = timezone.now() + timedelta(days=duration_days) if duration_days > 0 else None
 
     if command.is_subscription:
         pass_purchase = PassPurchase.objects.create(
-            user=user,
+            user_id=user.id,
             stripe_checkout_id=command.stripe_checkout_id,
             stripe_customer_id=command.stripe_customer_id,
             stripe_price_id=command.stripe_price_id,
@@ -74,6 +79,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
             stripe_subscription_id=command.stripe_subscription_id,
             active=command.active,
             end_date=end_date,
+            stripe_idempotency_key=command.stripe_idempotency_key,
         )
     else:
         pass_purchase = PassPurchase.objects.create(
@@ -85,6 +91,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
             is_subscription=command.is_subscription,
             active=command.active,
             end_date=end_date,
+            stripe_idempotency_key=command.stripe_idempotency_key,
         )
 
     event = PaymentSuccessEvent(user_id=user.id, product_name=command.product_name)
@@ -95,7 +102,7 @@ def handle_create_pass_purchase(command: CreatePassPurchaseCommand):
 
 def handle_cancel_subscription(command: CancelSubscriptionCommand):
     try:
-        purchase = PassPurchase.objects.get(id=command.purchase_id)
+        purchase = get_pass_purchase_by_id(command.purchase_id)
 
         stripe.Subscription.modify(
             purchase.stripe_subscription_id,
@@ -108,9 +115,10 @@ def handle_cancel_subscription(command: CancelSubscriptionCommand):
         event = SubscriptionCancellationEvent(user_id=purchase.user.id, end_date=purchase.end_date.date())
         payment_event_dispatcher.dispatch(event)
     except PassPurchase.DoesNotExist:
-        print({"error": "Purchase not found."}, flush=True)
+        logger.error("Purchase with id %s not found when cancelling subscription.", command.purchase_id)
     except Exception as e:
-        print({"error": str(e)}, flush=True)
+        logger.exception("Unexpected error cancelling subscription %s", command.purchase_id)
+
 
 def handle_update_subscription_cancellation(command: CancelSubscriptionWebhookCommand):
     try:
@@ -120,10 +128,10 @@ def handle_update_subscription_cancellation(command: CancelSubscriptionWebhookCo
                 purchase.is_cancel_requested = True
 
             if command.status_stripe == "canceled":
-                purchase.is_active = False
+                purchase.active = False
                 purchase.is_cancel_requested = False
 
-            purchase.save(update_fields=["is_active", "is_cancel_requested"])
+            purchase.save(update_fields=["active", "is_cancel_requested"])
 
     except Exception as e:
-        print("❌ Error updating subscription status:", e, flush=True)
+        logger.exception("Error updating subscription status for %s", command.subscription_id)

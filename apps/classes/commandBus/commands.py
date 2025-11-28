@@ -1,6 +1,5 @@
 import typing
 from typing import Optional
-from apps.user.models import User
 from datetime import timedelta, datetime
 from typing import List, Optional
 

@@ -1,20 +1,24 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from apps.payment.models import PassPurchase
-import json
-from apps.payment.commandBus.commands import (CreatePurchaseIntentCommand, CancelSubscriptionWebhookCommand,
-                                              CancelSubscriptionCommand)
-from apps.payment.commandBus.command_bus import payment_command_bus
-from rest_framework import status
-from apps.payment.serializers import PassPurchaseSerializer
 import stripe
-from django.conf import settings
+from rest_framework import status
+from apps.payment.commandBus.command_bus import payment_command_bus
+from apps.payment.commandBus.commands import (
+    CancelSubscriptionCommand,
+    CreatePurchaseIntentCommand,
+)
+from apps.payment.services.webhook_handlers import (
+    InvalidPayloadError,
+    InvalidSignatureError,
+    StripeWebhookHandler,
+    WebhookError,
+)
 import os
-from apps.payment.commandBus.commands import CreatePassPurchaseCommand
+from apps.payment.validators import CancelSubscriptionValidator, CreatePurchaseIntentValidator
 
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
 
 class CreatePurchaseIntentApi(APIView):
@@ -22,11 +26,14 @@ class CreatePurchaseIntentApi(APIView):
 
     def post(self, request):
         user = request.user
+        validator = CreatePurchaseIntentValidator(data=request.data)
+        validator.is_valid(raise_exception=True)
 
         command = CreatePurchaseIntentCommand(user_id=user.id, **request.data)
         purchase_intent = payment_command_bus.handle(command)
 
         return Response(data=purchase_intent, status=status.HTTP_200_OK)
+
 
 class ListProductApi(APIView):
     def get(self, request):
@@ -54,76 +61,32 @@ class CancelSubscriptionApi(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        command = CancelSubscriptionCommand(purchase_id=pk)
+        validator = CancelSubscriptionValidator(data={"purchase_id": pk}, context={"user": request.user})
+        validator.is_valid(raise_exception=True)
+
+        command = CancelSubscriptionCommand(purchase_id=validator.validated_data.get('purchase_id'))
         payment_command_bus.handle(command)
 
         return Response({"message": "Subscription set to cancel at period end."}, status=status.HTTP_200_OK)
 
 
 class StripeWebhookApi(APIView):
+    authentication_classes: list = []
+    permission_classes: list = []
+
     def post(self, request):
-        payload = request.body
-        signature_header = request.META.get('HTTP_STRIPE_SIGNATURE')
-        endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
-        event = None
-        pass_purchase = None
+        stripe_webhook_handler = StripeWebhookHandler(
+            payload=request.body,
+            signature=request.META.get('HTTP_STRIPE_SIGNATURE'),
+        )
 
         try:
-            event = stripe.Webhook.construct_event(payload, signature_header, endpoint_secret)
-        except ValueError:
-            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
-        except stripe.error.SignatureVerificationError:
-            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+            response = stripe_webhook_handler.handle()
+        except InvalidSignatureError:
+            return Response({"detail": "Invalid Stripe signature."}, status=status.HTTP_400_BAD_REQUEST)
+        except InvalidPayloadError:
+            return Response({"detail": "Invalid Stripe payload."}, status=status.HTTP_400_BAD_REQUEST)
+        except WebhookError:
+            return Response({"detail": "Unable to process webhook."}, status=status.HTTP_400_BAD_REQUEST)
 
-        object_data = event["data"]["object"]
-
-        metadata = object_data.get("metadata", {})  # metadata dict
-        is_subscription = event["type"] == "checkout.session.completed"
-        subscription_id = object_data.get("subscription") if is_subscription else None
-
-        if event['type'] == 'payment_intent.succeeded' or event['type'] == 'checkout.session.completed':
-            if metadata:
-                command = CreatePassPurchaseCommand(
-                    user_id=metadata.get("user_id"),
-                    product_name=metadata.get("product_name"),
-                    is_subscription=is_subscription,
-                    stripe_checkout_id=object_data["id"] if is_subscription else None,
-                    stripe_payment_intent=object_data["id"] if not is_subscription else None,
-                    stripe_price_id=metadata.get("price_id"),
-                    stripe_product_id=metadata.get("product_id"),
-                    stripe_customer_id=object_data.get("customer") if is_subscription else None,
-                    stripe_subscription_id=subscription_id,
-                    duration_days= metadata.get("duration_days"),
-                    active=True
-                )
-
-                pass_purchase = payment_command_bus.handle(command)
-                serializer = PassPurchaseSerializer(pass_purchase)
-
-                return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-        if event['type'] in ("customer.subscription.updated", "customer.subscription.deleted"):
-            command = CancelSubscriptionWebhookCommand(
-                subscription_id=object_data.get("subscription"),
-                status_stripe = object_data.get("status"),
-                cancel_at_period_end = object_data.get("cancel_at_period_end", False)
-            )
-
-            payment_command_bus.handle(command)
-
-
-            try:
-                purchase = PassPurchase.objects.filter(stripe_subscription_id=subscription_id).first()
-                if purchase:
-                    if cancel_at_period_end and not purchase.is_cancel_requested:
-                        purchase.is_cancel_requested = True
-
-                    if status_stripe == "canceled":
-                        purchase.is_active = False
-                        purchase.is_cancel_requested = False
-
-                    purchase.save(update_fields=["is_active", "is_cancel_requested"])
-            except Exception as e:
-                print("❌ Error updating subscription status:", e, flush=True)
-
-        return Response(status=status.HTTP_200_OK)
+        return response

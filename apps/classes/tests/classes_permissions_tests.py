@@ -1,10 +1,13 @@
-from conftest import admin_client, instructor_client, client_client, sample_class, sample_booking
+from conftest import admin_client, instructor_client, client_client, sample_class
 from rest_framework import status
 from django.utils import timezone
 from model_bakery import baker
 from apps.classes.models import Classes
+import pytest
+
 
 classes_endpoint = "/classes"
+pytestmark = pytest.mark.django_db
 
 
 def test_create_class_permissions(admin_client, instructor_client, client_client):
@@ -19,7 +22,7 @@ def test_create_class_permissions(admin_client, instructor_client, client_client
         "date": (timezone.now() + timezone.timedelta(days=1)).isoformat(),
         "instructor_id": str(instructor_user.id),
         "recurrence_type": None,
-        "recurrence_days": [],
+        "recurrence_days": None,
     }
 
     admin_response = admin.post(classes_endpoint, payload, format="json")

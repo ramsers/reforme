@@ -3,10 +3,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken
-from apps.authentication.validators import SignUpValidator, LoginValidator
+from apps.authentication.validators import (SignUpValidator, LoginValidator, ForgotPasswordValidator,
+                                            ResetPasswordValidator)
 from apps.user.commandBus.command_bus import user_command_bus
 from apps.user.commandBus.commands import CreateUserCommand
+from apps.authentication.commandBus.commands import RequestResetPasswordCommand, ResetPasswordCommand
 from apps.user.serializers import UserSerializer
+from apps.authentication.commandBus.command_bus import auth_command_bus
 
 
 class SignUpAPI(APIView):
@@ -14,8 +17,7 @@ class SignUpAPI(APIView):
         validator = SignUpValidator(data={**request.data})
         validator.is_valid(raise_exception=True)
 
-        with transaction.atomic():
-            user_command = CreateUserCommand(**validator.validated_data)
+        user_command = CreateUserCommand(**validator.validated_data)
         user = user_command_bus.handle(user_command)
         refresh = RefreshToken.for_user(user)
         serializer = UserSerializer(user)
@@ -47,3 +49,34 @@ class LoginAPI(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class ForgotPasswordAPI(APIView):
+    def post(self, request):
+        validator = ForgotPasswordValidator(data={**request.data})
+        validator.is_valid(raise_exception=True)
+
+        command = RequestResetPasswordCommand(validator.validated_data.get("email"))
+        auth_command_bus.handle(command)
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class ResetPasswordAPI(APIView):
+    def post(self, request):
+        validator = ResetPasswordValidator(data={**request.data})
+        validator.is_valid(raise_exception=True)
+
+        user = validator.validated_data.get("user")
+        password = validator.validated_data.get("password")
+        reset_token = validator.validated_data.get("reset_token")
+
+        command = ResetPasswordCommand(
+            user=user,
+            password=password,
+            reset_token=reset_token
+        )
+
+        auth_command_bus.handle(command)
+
+        return Response(status=status.HTTP_200_OK)

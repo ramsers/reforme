@@ -10,21 +10,16 @@ class EventDispatcher:
         self._handlers.append((event_cls, handler))
 
     def dispatch(self, event, async_default: bool = True):
-        """Dispatch an event instance. By default try async when possible."""
-        # decide async: prefer environment flag or passed arg
         env = os.environ.get("APP_ENV", "local").lower()
         run_async = async_default and env not in ("local", "test")
         handlers = [h for (cls, h) in self._handlers if cls == event.__class__]
         if not handlers:
-            return  # or raise
+            return
 
         for handler in handlers:
             if run_async:
-                # uses default queue
                 django_rq.enqueue(handler, event)
             else:
                 handler(event)
 
-
-# single global dispatcher instance
 event_dispatcher = EventDispatcher()

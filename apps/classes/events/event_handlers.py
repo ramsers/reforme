@@ -1,41 +1,29 @@
-from django.db.models import Q
+from django.db.models import Q, F
 from apps.classes.models import Classes
+from apps.classes.selectors.selectors import get_class_by_id
 from apps.core.email_service import send_html_email
-from apps.classes.events.events import RescheduleClassEvent
+from apps.classes.events.events import RescheduleClassEvent, DeletedClassEvent
+
 
 def handle_class_rescheduled_event(event: RescheduleClassEvent):
-    """
-    Send HTML emails to all booked users + instructor when a class changes.
-    - If event.update_series is False: notify for this single class (with new date).
-    - If event.update_series is True: notify entire series with a generic schedule update.
-    """
     cls = Classes.objects.select_related("instructor", "parent_class").get(id=event.class_id)
     root = cls.parent_class or cls
 
-    # Figure out which classes are affected
     if event.update_series:
         affected_classes = Classes.objects.filter(Q(parent_class=root) | Q(id=root.id))
     else:
         affected_classes = [cls]
 
-    # Collect recipients
     emails = set()
     for c in affected_classes:
-        print('AFFECTED CLASSES ============================', c, flush=True)
         emails.update(c.bookings.values_list("client__email", flat=True))
     if cls.instructor and cls.instructor.email:
         emails.add(cls.instructor.email)
 
-    print('EMAIL =====================', emails, flush=True)
-
     if not emails:
         return
 
-    # Build message
     if event.recurrence_changed:
-
-        print('event.recurrence_changed =====================', event.recurrence_changed, flush=True)
-
         subject = "Class schedule updated"
         template_name = "emails/class_removed.html"
         context = {
@@ -55,11 +43,32 @@ def handle_class_rescheduled_event(event: RescheduleClassEvent):
             "message": f"Your class has been updated to {formatted_date}.",
         }
 
-    # Send to all
     for email in emails:
         send_html_email(
             subject=subject,
             to=email,
             template_name=template_name,
             context=context,
+        )
+
+
+def handle_class_deleted_event(event: DeletedClassEvent):
+    cls = get_class_by_id(event.class_id)
+
+    bookings = (
+        cls.bookings
+        .values(
+            email=F("client__email"),
+        )
+    )
+
+    for b in bookings:
+        send_html_email(
+            subject=f'Class {cls.title} has been canceled',
+            to=b["email"],
+            template_name="emails/class_removed.html",
+            context={
+                "class_name": cls.title,
+                "class_date": cls.date,
+            }
         )

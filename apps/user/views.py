@@ -3,8 +3,8 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework import status, viewsets
 
 from apps.user.filters.user_filters import UserFilter
-from apps.user.validators import UpdateUserValidator, CreateUserValidator
-from apps.user.commandBus.commands import UpdateUserCommand, CreateUserCommand
+from apps.user.validators import UpdateUserValidator, CreateUserValidator, DeleteUserValidator
+from apps.user.commandBus.commands import UpdateUserCommand, CreateUserCommand, DeleteUserCommand
 from apps.user.commandBus.command_bus import user_command_bus
 from apps.user.serializers import UserSerializer
 from apps.user.models import User
@@ -80,3 +80,14 @@ class UserViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(queryset)
         serializer = UserSerializer(page, many=True)
         return self.get_paginated_response(serializer.data)
+
+    @is_admin
+    @action(detail=True, methods=["delete"], url_path="delete")
+    def delete(self, request, *args, **kwargs):
+        validator = DeleteUserValidator(data={"id": self.kwargs.get('pk')}, context={"user": request.user})
+        validator.is_valid(raise_exception=True)
+
+        command = DeleteUserCommand(**validator.validated_data)
+        user_command_bus.handle(command)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
