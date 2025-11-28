@@ -26,7 +26,7 @@ APP_ENV = os.environ.get("APP_ENV", "local").lower()
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local").lower()
 
 
