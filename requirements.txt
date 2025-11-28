@@ -14,4 +14,9 @@ python-dateutil>=2.9
 pytest==8.3.2
 pytest-django==4.8.0
 model-bakery==1.18.0
+gunicorn>=21.2.0
+whitenoise
+dj-database-url
+psycopg2-binary
+
 

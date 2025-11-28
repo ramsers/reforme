@@ -13,13 +13,16 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
-SECRET_KEY = 'django-insecure-pk(eliwr&vo=s6h*n+(1vky0sj379q&%j6c=p7o-z&gs79rj4g'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+APP_ENV = os.environ.get("APP_ENV", "local").lower()
+
 
 DEBUG = True
 
@@ -56,6 +59,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
 ROOT_URLCONF = 'reformeApi.urls'
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -78,20 +83,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'reformeApi.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv("DB_NAME", "reforme"),
-        'USER': os.getenv("DB_USER", "reforme"),
-        'PASSWORD': os.getenv("DB_PASSWORD", "reforme"),
-        'HOST': os.getenv("DB_HOST", "127.0.0.1"),
-        'PORT': os.getenv("DB_PORT", "3306"),
-        "OPTIONS": {
-            "charset": "utf8mb4",
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+
+if APP_ENV == "production":
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=os.environ.get("DATABASE_URL"),
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv("DB_NAME", "reforme"),
+            'USER': os.getenv("DB_USER", "reforme"),
+            'PASSWORD': os.getenv("DB_PASSWORD", "reforme"),
+            'HOST': os.getenv("DB_HOST", "127.0.0.1"),
+            'PORT': os.getenv("DB_PORT", "3306"),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
+    }
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -120,6 +135,8 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "user.User"
@@ -144,8 +161,8 @@ SIMPLE_JWT = {
 
 RQ_QUEUES = {
     "default": {
-        "URL": os.getenv("REDIS_URL", "redis://redis:6379/0"),
-        "DEFAULT_TIMEOUT": 360,
+        "URL": os.getenv("RQ_REDIS_URL", "redis://redis:6379/1"),
+        "DEFAULT_TIMEOUT": 500,
     },
 }
 
@@ -159,8 +176,8 @@ DEFAULT_FROM_EMAIL = "raheimbbailey@gmail.com"
 STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND =  os.getenv("REDIS_URL", "redis://redis:6379/0")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

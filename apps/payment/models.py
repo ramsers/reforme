@@ -24,7 +24,6 @@ class PassPurchase(UUIDModel, TimestampModel):
     class Meta:
         ordering = ['-created_at']
         db_table = "pass_purchases"
-        # zest - fave - fine - pride
 
     @property
     def is_active(self):
