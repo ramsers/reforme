@@ -24,3 +24,8 @@ class ClassesFilter(django_filters.FilterSet):
         return queryset.filter(
             Q(title__icontains=value) | Q(description__icontains=value) | Q(instructor__name__icontains=value)
         )
+
+    @property
+    def qs(self):
+        queryset = super().qs
+        return queryset.order_by("date")
