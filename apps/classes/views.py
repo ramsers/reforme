@@ -11,6 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from apps.classes.filter.classes_filter import ClassesFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count, Prefetch
+from apps.booking.models import Booking
+
 
 
 class ClassesViewSet(viewsets.ModelViewSet):

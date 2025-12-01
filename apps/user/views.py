@@ -27,6 +27,27 @@ class UserViewSet(viewsets.ModelViewSet):
     filterset_class = UserFilter
     pagination_class = UserPagination
 
+    def get_queryset(self):
+        queryset = User.objects.all()
+        list_actions = ["list", "all_instructors", "all_clients"]
+
+        if getattr(self, "action", None) in list_actions:
+            return queryset.only(
+                "id",
+                "email",
+                "name",
+                "phone_number",
+                "role",
+                "created_at",
+            )
+
+        return queryset.prefetch_related("purchases")
+
+    def get_serializer_class(self):
+        if getattr(self, "action", None) in ["list", "all_instructors", "all_clients"]:
+            return UserListSerializer
+
+        return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
         validator = CreateUserValidator(data={**request.data}, context={"user": request.user})

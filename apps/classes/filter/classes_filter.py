@@ -17,7 +17,7 @@ class ClassesFilter(django_filters.FilterSet):
 
     def filter_has_bookings(self, queryset, name, value):
         if value:
-            return queryset.annotate(num_bookings=Count("bookings"))
+            return queryset.annotate(num_bookings=Count("bookings")).filter(num_bookings__gt=0).distinct()
         return queryset
 
     def filter_search(self, queryset, name, value):
