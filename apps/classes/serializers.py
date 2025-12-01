@@ -8,14 +8,18 @@ from django.core.exceptions import ObjectDoesNotExist
 
 class ClassesSerializer(serializers.ModelSerializer):
     instructor = UserSerializer(read_only=True)
-    bookings_count = serializers.IntegerField(source="bookings.count", read_only=True)
+    bookings_count = serializers.IntegerField(read_only=True)
     is_full = serializers.SerializerMethodField()
     bookings = BookingClientSerializer(source="bookings.all", many=True, read_only=True)
     recurrence_type = serializers.SerializerMethodField()
     recurrence_days = serializers.SerializerMethodField()
 
     def get_is_full(self, obj):
-        return obj.bookings.count() >= int(obj.size)
+        bookings_count = getattr(obj, "bookings_count", None)
+        if bookings_count is None:
+            bookings_count = obj.bookings.count()
+
+        return bookings_count >= int(obj.size)
 
     def get_recurrence_type(self, obj):
         if obj.parent_class:

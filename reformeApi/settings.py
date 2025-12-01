@@ -173,6 +173,11 @@ RQ_QUEUES = {
     },
 }
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://reforme.onrender.com"
+]
+
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.sendgrid.net"
 EMAIL_PORT = 587

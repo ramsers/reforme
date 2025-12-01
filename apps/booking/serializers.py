@@ -9,7 +9,6 @@ class BookingSerializer(serializers.ModelSerializer):
 
     def get_client(self, value):
         client = value.client
-        print("TYPE OF CLIENT =======", type(client), client, flush=True)
 
         return UserSerializer(client).data
 
