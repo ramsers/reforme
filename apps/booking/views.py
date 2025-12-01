@@ -21,12 +21,19 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        queryset = Booking.objects.select_related(
+            "client",
+            "booked_class",
+            "booked_class__instructor",
+            "booked_class__parent_class",
+        ).prefetch_related("booked_class__bookings__client")
+
         if user.role == Role.ADMIN:
-            return Booking.objects.all()
+            return queryset
         elif user.role == Role.INSTRUCTOR:
-            return Booking.objects.filter(booked_class__instructor=user)
+            return queryset.filter(booked_class__instructor=user)
         else:
-            return Booking.objects.filter(client=user)
+            return queryset.filter(client=user)
 
     def create(self, request, *args, **kwargs):
         validator = CreateBookingValidator(data=request.data, context={"booker": request.user})

@@ -10,6 +10,9 @@ from apps.classes.commandBus.command_bus import classes_command_bus
 from rest_framework.permissions import IsAuthenticated
 from apps.classes.filter.classes_filter import ClassesFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Count, Prefetch
+from apps.booking.models import Booking
+
 
 
 class ClassesViewSet(viewsets.ModelViewSet):
@@ -19,11 +22,22 @@ class ClassesViewSet(viewsets.ModelViewSet):
     filterset_class = ClassesFilter
 
     def get_queryset(self):
+        bookings_prefetch = Prefetch(
+            "bookings",
+            queryset=Booking.objects.select_related("client").order_by("created_at"),
+        )
+
+        queryset = (
+            Classes.objects.select_related("instructor", "parent_class")
+            .prefetch_related(bookings_prefetch, "bookings__client")
+            .annotate(bookings_count=Count("bookings"))
+        )
+
         user = self.request.user
         if hasattr(user, 'role') and user.role == "INSTRUCTOR":
-            return Classes.objects.filter(instructor=user)
-        else:
-            return Classes.objects.all()
+            queryset = queryset.filter(instructor=user)
+
+        return queryset
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
