@@ -1,6 +1,9 @@
 import typing as t
 import os
 import django_rq
+import logging
+
+logger = logging.getLogger(__name__)
 
 class EventDispatcher:
     def __init__(self):
@@ -11,8 +14,9 @@ class EventDispatcher:
 
     def dispatch(self, event, async_default: bool = True):
         env = os.environ.get("APP_ENV", "local").lower()
-        run_async = async_default and env not in ("local", "test")
+        run_async = async_default and env == "production"
         handlers = [h for (cls, h) in self._handlers if cls == event.__class__]
+
         if not handlers:
             return
 
