@@ -1,9 +1,7 @@
 import typing as t
 import os
 import django_rq
-import logging
 
-logger = logging.getLogger(__name__)
 
 class EventDispatcher:
     def __init__(self):
