@@ -63,7 +63,7 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
     non_schedule_fields = {
         name: value
         for name, value in fields.items()
-        if name not in ["date", "recurrence_type", "recurrence_days", "instructor_id"]
+        if name not in ["date", "recurrence_type", "recurrence_days"]
     }
 
     if not command.update_series:
@@ -79,30 +79,49 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
 
     root = cls.parent_class or cls
 
+    def apply_non_schedule_updates():
+        if not non_schedule_fields:
+            return
+
+        for field, value in non_schedule_fields.items():
+            setattr(root, field, value)
+            setattr(cls, field, value)
+
+        root.save(update_fields=list(non_schedule_fields.keys()))
+
+        propagate_non_date_fields(root, cls, non_schedule_fields)
+
     if rec_changed:
         root.recurrence_type = command.recurrence_type
         root.recurrence_days = command.recurrence_days
         root.save()
+        apply_non_schedule_updates()
         regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
         emit_reschedule_event(root, update_series=True, recurrence_change=True)
         return cls
 
     if time_changed and not date_changed:
+        root.date = fields["date"] if cls == root else root.date
         cls.date = fields["date"]
-        cls.save()
+        root.save(update_fields=["date"]) if cls != root else cls.save()
 
+        apply_non_schedule_updates()
         shift_future_class_times(root, cls, fields["date"])
         emit_reschedule_event(root, update_series=True)
         return cls
 
     if date_changed:
+        root.date = fields["date"] if cls == root else root.date
+        cls.date = fields["date"]
+        root.save(update_fields=["date"]) if cls != root else cls.save()
+
+        apply_non_schedule_updates()
         regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
         emit_reschedule_event(root, update_series=True)
         return cls
 
     if non_schedule_fields:
-        propagate_non_date_fields(root, cls, non_schedule_fields)
-
+        apply_non_schedule_updates()
 
     return cls
 
