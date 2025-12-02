@@ -34,7 +34,6 @@ else:
 DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
-ENVIRONMENT = os.getenv("ENVIRONMENT", "local").lower()
 
 
 INSTALLED_APPS = [
