@@ -42,7 +42,7 @@ def handle_create_class(command: CreateClassCommand):
             root_class=new_class,
             start_date=start_date,
             metadata_overrides=None,
-            max_instances=10,
+            max_instances=None,
         )
         Classes.objects.bulk_create(future_instances)
 
