@@ -7,17 +7,28 @@ from apps.classes.models import Classes
 from apps.classes.events.events import RescheduleClassEvent
 from apps.classes.events.event_dispatchers import class_event_dispatcher
 from dateutil.relativedelta import relativedelta
+from apps.classes.value_objects import ClassRecurrenceType
+
+
+def get_default_max_instances(rec_type: ClassRecurrenceType | None, rec_days: list[int]):
+    if rec_type == "WEEKLY":
+        return 52 * max(1, len(rec_days))
+    return 10
 
 
 def build_recurring_schedule(
     root_class: Classes,
     start_date: date,
     metadata_overrides: dict | None = None,
-    max_instances: int = 10,
+    max_instances: int | None = None,
 ):
     metadata_overrides = metadata_overrides or {}
     rec_type = root_class.recurrence_type
     rec_days = root_class.recurrence_days or []
+
+    if max_instances is None:
+        max_instances = get_default_max_instances(rec_type, rec_days)
+
     today = timezone.now().date()
     future_instances = []
     occurrences = 0
@@ -151,7 +162,7 @@ def regenerate_future_classes(root_class: Classes, starting_from: Classes,  meta
         root_class=root_class,
         start_date=starting_from.date.date(),
         metadata_overrides=metadata_overrides,
-        max_instances=10,
+        max_instances=None,
     )
 
     if new_instances:
