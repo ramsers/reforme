@@ -42,7 +42,7 @@ def handle_create_class(command: CreateClassCommand):
             root_class=new_class,
             start_date=start_date,
             metadata_overrides=None,
-            max_instances=10,
+            max_instances=None,
         )
         Classes.objects.bulk_create(future_instances)
 
@@ -51,10 +51,11 @@ def handle_create_class(command: CreateClassCommand):
 
 def handle_partial_update_class(command: PartialUpdateClassCommand):
     cls = get_class_by_id(command.id)
+    root = cls.parent_class or cls
 
     old_date = cls.date
-    old_rec_type = cls.recurrence_type
-    old_rec_days = cls.recurrence_days or []
+    old_rec_type = root.recurrence_type if command.update_series else cls.recurrence_type
+    old_rec_days = (root.recurrence_days or []) if command.update_series else (cls.recurrence_days or [])
     fields = collect_field_updates(command)
 
     date_changed, time_changed = detect_datetime_change(fields, old_date)

@@ -65,6 +65,7 @@ def test_create_weekly_recurring_classes_successfully(admin_client, instructor_u
     children = parent.child_classes.all()
 
     assert children.exists()
+    assert children.count() == 52 * len(payload["recurrence_days"])
 
     parent_time = (parent.date.hour, parent.date.minute)
     for child in children:
