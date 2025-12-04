@@ -79,7 +79,7 @@ def admin_client(db):
 @pytest.fixture
 def client_user(db):
     user = baker.make(User, role=Role.CLIENT, email="client@example.com")
-    Account.objects.get_or_create(user=user, defaults={"timezone": "UTC"})
+    Account.objects.get_or_create(user=user, defaults={"timezone": "America/Los_Angeles"})
     return user
 
 @pytest.fixture
