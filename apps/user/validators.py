@@ -17,8 +17,6 @@ class CreateUserValidator(serializers.Serializer):
     password = serializers.CharField(required=False, allow_null=True)
     role = serializers.ChoiceField(choices=Role.choices, required=True, allow_null=False)
     timezone = serializers.CharField(
-        # required=False,
-        # allow_null=False,
         default="EST",
         validators=[validate_iana_timezone],
     )

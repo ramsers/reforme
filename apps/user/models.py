@@ -25,7 +25,7 @@ class User(AbstractBaseUser, UUIDModel, TimestampModel):
 
 
 class Account(UUIDModel, TimestampModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="account")
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="account")
     bio = models.TextField(blank=True, null=True)
     timezone = models.CharField(max_length=255, default="EST")
 

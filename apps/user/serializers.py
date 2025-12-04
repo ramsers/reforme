@@ -11,8 +11,11 @@ class AccountSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    account = AccountSerializer()
+    account = serializers.SerializerMethodField()
     purchases = PassPurchaseSerializer(many=True, read_only=True)
+
+    def get_account(self, obj):
+        return AccountSerializer(account, context=self.context).data
 
     class Meta:
         model = User

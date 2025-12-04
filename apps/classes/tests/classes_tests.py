@@ -8,6 +8,13 @@ from conftest import (admin_client)
 from django.db.models import Q
 import pytest
 from apps.classes.services.class_update_services import regenerate_future_classes
+from rest_framework.test import APIRequestFactory
+from zoneinfo import ZoneInfo
+from apps.user.models import Account
+from apps.classes.serializers import ClassesSerializer
+from django.contrib.auth import get_user_model
+import datetime as dt
+
 
 
 pytestmark = pytest.mark.django_db
@@ -529,3 +536,18 @@ def test_children_inherit_parent_recurrence(admin_client, instructor_user):
         assert child["recurrence_type"] == parent["recurrence_type"]
         assert child["recurrence_days"] == parent["recurrence_days"]
 
+
+def test_classes_serializer_converts_date_to_user_timezone(db):
+    user = baker.make(get_user_model(), email="tzuser@example.com")
+    Account.objects.create(user=user, timezone="America/Los_Angeles")
+
+    class_date = dt.datetime(2024, 1, 1, 12, 0, tzinfo=ZoneInfo("UTC"))
+    class_instance = baker.make(Classes, date=class_date)
+
+    request = APIRequestFactory().get(classes_endpoint)
+    request.user = user
+
+    data = ClassesSerializer(class_instance, context={"request": request}).data
+
+    expected_date = class_date.astimezone(ZoneInfo("America/Los_Angeles")).isoformat()
+    assert data["date"] == expected_date
