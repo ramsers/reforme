@@ -4,7 +4,7 @@ from django.db import transaction
 from datetime import timedelta
 import random
 
-from apps.user.models import User, Role
+from apps.user.models import User, Role, Account
 from apps.classes.models import Classes, ClassRecurrenceType
 from apps.booking.models import Booking
 from apps.payment.models import PassPurchase
@@ -134,6 +134,16 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Created user: {email} ({role})"))
         else:
             self.stdout.write(f"User already exists: {email} ({role})")
+
+        account, account_created = Account.objects.get_or_create(
+            user=user, defaults={"timezone": "EST"}
+        )
+        if account_created:
+            self.stdout.write(
+                self.style.SUCCESS(f"Created account for user: {email} ({role})")
+            )
+        else:
+            self.stdout.write(f"Account already exists for user: {email} ({role})")
         return user
 
     def _create_passes_for_clients(self, clients):
