@@ -15,7 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
     purchases = PassPurchaseSerializer(many=True, read_only=True)
 
     def get_account(self, obj):
-        return AccountSerializer(account, context=self.context).data
+        return AccountSerializer(obj.account, context=self.context).data
 
     class Meta:
         model = User
