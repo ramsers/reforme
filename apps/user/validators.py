@@ -2,6 +2,8 @@ from rest_framework import serializers
 from apps.user.models import User
 from apps.user.selectors.selectors import get_user_by_id
 from apps.user.value_objects import Role
+from zoneinfo import ZoneInfo
+
 
 def validate_iana_timezone(value: str):
     try:
