@@ -37,6 +37,7 @@ def test_user(db):
     user = baker.make(User, email="testuser@example.com")
     user.set_password("testpassword!")
     user.save(update_fields=["password"])
+    Account.objects.get_or_create(user=user, defaults={"timezone": "UTC"})
     return user
 
 
