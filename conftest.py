@@ -23,6 +23,8 @@ def create_authenticated_client(role: str):
     user.set_password("testpassword123!")
     user.save()
 
+    Account.objects.get_or_create(user=user, defaults={"timezone": "UTC"})
+
     refresh = RefreshToken.for_user(user)
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
