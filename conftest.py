@@ -78,13 +78,15 @@ def admin_client(db):
 
 @pytest.fixture
 def client_user(db):
-    return baker.make(User, role=Role.CLIENT, email="client@example.com")
-
+    user = baker.make(User, role=Role.CLIENT, email="client@example.com")
+    Account.objects.get_or_create(user=user, defaults={"timezone": "UTC"})
+    return user
 
 @pytest.fixture
 def instructor_user(db):
-    return baker.make(User, role=Role.INSTRUCTOR, email="instructor@example.com")
-
+    user = baker.make(User, role=Role.INSTRUCTOR, email="instructor@example.com")
+    Account.objects.get_or_create(user=user, defaults={"timezone": "UTC"})
+    return user
 
 @pytest.fixture
 def sample_class(db, instructor_user):
@@ -112,6 +114,7 @@ def user_with_reset_token(db):
     )
     user.set_password("OldPassword123!")
     user.save()
+    Account.objects.get_or_create(user=user, defaults={"timezone": "UTC"})
 
     token = PasswordResetToken.objects.create(
         user=user,
