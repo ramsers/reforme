@@ -20,12 +20,18 @@ def handle_create_class(command: CreateClassCommand):
     start_date = command.date
     recurrence_type = command.recurrence_type
     recurrence_days = command.recurrence_days or []
+    provided_tz = start_date.tzinfo if timezone.is_aware(start_date) else None
+    print('provided_tz =================', provided_tz, flush=True)
+
+
 
     if recurrence_type == "WEEKLY" and recurrence_days:
         weekday = start_date.weekday()
         if weekday not in recurrence_days:
             days_until_next = min((d - weekday) % 7 for d in recurrence_days)
             start_date += timedelta(days=days_until_next)
+
+    print('TESTO =================', start_date, flush=True)
 
     new_class = Classes.objects.create(
         title=command.title,
@@ -45,6 +51,9 @@ def handle_create_class(command: CreateClassCommand):
             max_instances=None,
         )
         Classes.objects.bulk_create(future_instances)
+
+    print('TESTO DSRZO =================', new_class.date, flush=True)
+
 
     return new_class
 
