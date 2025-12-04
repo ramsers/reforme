@@ -122,9 +122,3 @@ def user_with_reset_token(db):
     )
 
     return user, token.token
-
-@pytest.fixture
-def client_user_with_account(client_user):
-    Account.objects.create(user=client_user, timezone="America/Los_Angeles")
-    return client_user
-

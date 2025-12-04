@@ -537,8 +537,8 @@ def test_children_inherit_parent_recurrence(admin_client, instructor_user):
         assert child["recurrence_days"] == parent["recurrence_days"]
 
 
-def test_classes_serializer_converts_date_to_user_timezone(db, client_user_with_account):
-    user = client_user_with_account
+def test_classes_serializer_converts_date_to_user_timezone(db, client_user):
+    user = client_user
 
     class_date = dt.datetime(2024, 1, 1, 12, 0, tzinfo=ZoneInfo("UTC"))
     class_instance = baker.make(Classes, date=class_date)
