@@ -147,12 +147,16 @@ def recurrence_changed(command, old_type, old_days):
     )
 
 
-def detect_datetime_change(fields_to_update, old_date):
+def detect_datetime_change(fields_to_update, old_date, tzinfo=None):
     if 'date' not in fields_to_update:
         return False, False
     new_date = fields_to_update['date']
-    return new_date.date() != old_date.date(), new_date.time() != old_date.time()
 
+    if tzinfo:
+        new_date = new_date.astimezone(tzinfo)
+        old_date = old_date.astimezone(tzinfo)
+
+    return new_date.date() != old_date.date(), new_date.timetz() != old_date.timetz()
 
 
 def regenerate_future_classes(root_class: Classes, starting_from: Classes, metadata_overrides=None):

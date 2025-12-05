@@ -68,7 +68,23 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
     old_rec_days = (root.recurrence_days or []) if command.update_series else (cls.recurrence_days or [])
     fields = collect_field_updates(command)
 
-    date_changed, time_changed = detect_datetime_change(fields, old_date)
+    if command.update_series and cls.parent_class and "date" in fields:
+        user_tz = ZoneInfo(root.instructor.account.timezone)
+
+        incoming_local = fields["date"].astimezone(user_tz)
+        child_local = cls.date.astimezone(user_tz)
+
+        aligned_local = child_local.replace(
+            hour=incoming_local.hour,
+            minute=incoming_local.minute,
+            second=incoming_local.second,
+            microsecond=incoming_local.microsecond,
+        )
+
+        fields["date"] = aligned_local.astimezone(dt_timezone.utc)
+
+    user_tz = ZoneInfo(root.instructor.account.timezone)
+    date_changed, time_changed = detect_datetime_change(fields, old_date, tzinfo=user_tz)
     rec_changed = recurrence_changed(command, old_rec_type, old_rec_days)
 
     non_schedule_fields = {
@@ -112,9 +128,23 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
         return cls
 
     if time_changed and not date_changed:
-        root.date = fields["date"] if cls == root else root.date
-        cls.date = fields["date"]
-        root.save(update_fields=["date"]) if cls != root else cls.save()
+        print('TIME CHANGED ====================', flush=True)
+        new_time = fields["date"]
+
+        root.date = new_time if cls == root else root.date.replace(
+            hour=new_time.hour,
+            minute=new_time.minute,
+            second=new_time.second,
+            microsecond=new_time.microsecond,
+        )
+
+        cls.date = new_time
+
+        if cls == root:
+            root.save()
+        else:
+            root.save(update_fields=["date"])
+            cls.save(update_fields=["date"])
 
         apply_non_schedule_updates()
         shift_future_class_times(root, cls, fields["date"])
@@ -122,6 +152,8 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
         return cls
 
     if date_changed:
+        print('DATE CHANGED ====================', flush=True)
+
         root.date = fields["date"] if cls == root else root.date
         cls.date = fields["date"]
         root.save(update_fields=["date"]) if cls != root else cls.save()
