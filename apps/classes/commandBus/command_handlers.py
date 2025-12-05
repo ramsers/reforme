@@ -18,7 +18,6 @@ from zoneinfo import ZoneInfo
 from datetime import timezone as dt_timezone
 
 
-
 def handle_create_class(command: CreateClassCommand):
     start_date = command.date
     recurrence_type = command.recurrence_type
@@ -49,9 +48,6 @@ def handle_create_class(command: CreateClassCommand):
             max_instances=None,
         )
         Classes.objects.bulk_create(future_instances)
-
-    print('TESTO DSRZO =================', new_class.date, flush=True)
-
 
     return new_class
 
@@ -142,7 +138,6 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
         return cls
 
     if time_changed and not date_changed:
-        print('TIME CHANGED ====================', flush=True)
         new_time = fields["date"]
 
         root.date = new_time if cls == root else root.date.replace(
@@ -166,8 +161,6 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
         return cls
 
     if date_changed:
-        print('DATE CHANGED ====================', flush=True)
-
         root.date = fields["date"] if cls == root else root.date
         cls.date = fields["date"]
         root.save(update_fields=["date"]) if cls != root else cls.save()

@@ -154,24 +154,19 @@ def detect_datetime_change(fields_to_update, old_date, tzinfo=None):
 
 def regenerate_future_classes(root_class: Classes, starting_from: Classes, metadata_overrides=None):
     metadata_overrides = metadata_overrides or {}
-
-    # Determine user timezone (choose your source of truth)
-    # Example:
     user_tz = ZoneInfo(root_class.instructor.account.timezone)
 
-    # Convert starting_from to LOCAL datetime
     start_local = starting_from.date.astimezone(user_tz)
+    delete_qs = Classes.objects.filter(parent_class=root_class)
 
-    # Delete all future children
-    Classes.objects.filter(
-        parent_class=root_class,
-        date__gte=starting_from.date,
-    ).delete()
+    if starting_from.parent_class:
+        delete_qs = delete_qs.filter(date__gte=starting_from.date)
 
-    # Build new instances using LOCAL datetime (NOT .date())
+    delete_qs.delete()
+
     new_instances = build_recurring_schedule(
         root_class=root_class,
-        start_date=start_local,     # MUST be datetime with tzinfo
+        start_date=start_local,
         metadata_overrides=metadata_overrides,
         max_instances=None,
     )
