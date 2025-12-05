@@ -8,7 +8,7 @@ class CreateClassesValidator(serializers.Serializer):
     description = serializers.CharField(required=True, allow_null=False)
     size = serializers.IntegerField(required=True, allow_null=False, min_value=1)
     date = serializers.DateTimeField(required=True, allow_null=False)
-    instructor_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    instructor_id = serializers.CharField(required=True, allow_null=False, allow_blank=False)
     recurrence_type = serializers.ChoiceField(
         required=False,
         allow_null=True,

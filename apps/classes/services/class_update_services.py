@@ -12,6 +12,23 @@ from datetime import timezone as dt_timezone
 from zoneinfo import ZoneInfo
 
 
+def apply_non_schedule_updates(root_class, cls, non_schedule_fields):
+    if not non_schedule_fields:
+        return
+
+    update_fields = list(non_schedule_fields.keys())
+
+    for field, value in non_schedule_fields.items():
+        setattr(cls, field, value)
+        if cls == root_class:
+            setattr(root_class, field, value)
+
+    if cls == root_class:
+        root_class.save(update_fields=update_fields)
+    cls.save(update_fields=update_fields)
+
+    propagate_non_date_fields(root_class, cls, non_schedule_fields)
+
 def get_default_max_instances(rec_type: ClassRecurrenceType | None, rec_days: list[int]):
     if rec_type == "WEEKLY":
         return 52 * max(1, len(rec_days))
@@ -207,6 +224,64 @@ def propagate_non_date_fields(root_class, class_to_update, non_date_fields):
         parent_class=root_class,
         date__gte=class_to_update.date
     ).update(**non_date_fields)
+
+def handle_recurrence_update(root, cls, command, localized_existing, localized_incoming, non_schedule_fields):
+    root.recurrence_type = command.recurrence_type
+    root.recurrence_days = command.recurrence_days
+
+    if command.recurrence_type == "WEEKLY" and command.recurrence_days:
+        reference_local = localized_incoming or localized_existing
+        aligned_local = align_datetime_to_recurrence(reference_local, command.recurrence_days)
+        aligned_utc = aligned_local.astimezone(dt_timezone.utc)
+        cls.date = aligned_utc
+        if cls == root:
+            root.date = aligned_utc
+
+    root.save()
+    if cls != root:
+        cls.save(update_fields=["date"])
+
+    apply_non_schedule_updates(root, cls, non_schedule_fields)
+    regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
+    emit_reschedule_event(root, update_series=True, recurrence_change=True)
+
+    return cls
+
+
+def handle_time_change(root, cls, new_time, non_schedule_fields):
+    root.date = new_time if cls == root else root.date.replace(
+        hour=new_time.hour,
+        minute=new_time.minute,
+        second=new_time.second,
+        microsecond=new_time.microsecond,
+    )
+
+    cls.date = new_time
+
+    if cls == root:
+        root.save()
+    else:
+        root.save(update_fields=["date"])
+        cls.save(update_fields=["date"])
+
+    apply_non_schedule_updates(root, cls, non_schedule_fields)
+    shift_future_class_times(root, cls, new_time)
+    emit_reschedule_event(root, update_series=True)
+
+    return cls
+
+
+def handle_date_change(root, cls, new_date, non_schedule_fields):
+    root.date = new_date if cls == root else root.date
+    cls.date = new_date
+    root.save(update_fields=["date"]) if cls != root else cls.save()
+
+    apply_non_schedule_updates(root, cls, non_schedule_fields)
+    regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
+    emit_reschedule_event(root, update_series=True)
+
+    return cls
+
 
 
 def align_datetime_to_recurrence(start_dt: datetime, recurrence_days: list[int]):

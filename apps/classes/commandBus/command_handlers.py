@@ -8,10 +8,11 @@ from datetime import timedelta
 
 from apps.classes.selectors.selectors import get_class_by_id
 from apps.classes.services.class_update_services import (build_recurring_schedule,
-                                                         recurrence_changed, regenerate_future_classes,
-                                                         detect_datetime_change, emit_reschedule_event,
-                                                         collect_field_updates, shift_future_class_times,
-                                                         propagate_non_date_fields, align_datetime_to_recurrence)
+                                                         recurrence_changed, detect_datetime_change,
+                                                         emit_reschedule_event, collect_field_updates,
+                                                         align_datetime_to_recurrence, apply_non_schedule_updates,
+                                                         handle_recurrence_update, handle_time_change,
+                                                         handle_date_change)
 from apps.classes.events.events import DeletedClassEvent
 from apps.classes.events.event_dispatchers import class_event_dispatcher
 from zoneinfo import ZoneInfo
@@ -102,83 +103,18 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
 
         return cls
 
-    root = cls.parent_class or cls
-
-    def apply_non_schedule_updates():
-        if not non_schedule_fields:
-            return
-
-        update_fields = list(non_schedule_fields.keys())
-
-        for field, value in non_schedule_fields.items():
-            setattr(cls, field, value)
-
-            if cls == root:
-                setattr(root, field, value)
-
-        if cls == root:
-            root.save(update_fields=update_fields)
-
-        cls.save(update_fields=update_fields)
-
-        propagate_non_date_fields(root, cls, non_schedule_fields)
 
     if rec_changed:
-        root.recurrence_type = command.recurrence_type
-        root.recurrence_days = command.recurrence_days
-
-        if command.recurrence_type == "WEEKLY" and command.recurrence_days:
-            reference_local = localized_incoming or localized_existing
-            aligned_local = align_datetime_to_recurrence(reference_local, command.recurrence_days)
-            aligned_utc = aligned_local.astimezone(dt_timezone.utc)
-            cls.date = aligned_utc
-            if cls == root:
-                root.date = aligned_utc
-
-        root.save()
-        if cls != root:
-            cls.save(update_fields=["date"])
-
-        apply_non_schedule_updates()
-        regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
-        emit_reschedule_event(root, update_series=True, recurrence_change=True)
-        return cls
+        handle_recurrence_update(root, cls, command, localized_existing, localized_incoming, non_schedule_fields)
 
     if time_changed and not date_changed:
-        new_time = fields["date"]
-
-        root.date = new_time if cls == root else root.date.replace(
-            hour=new_time.hour,
-            minute=new_time.minute,
-            second=new_time.second,
-            microsecond=new_time.microsecond,
-        )
-
-        cls.date = new_time
-
-        if cls == root:
-            root.save()
-        else:
-            root.save(update_fields=["date"])
-            cls.save(update_fields=["date"])
-
-        apply_non_schedule_updates()
-        shift_future_class_times(root, cls, fields["date"])
-        emit_reschedule_event(root, update_series=True)
-        return cls
+        return handle_time_change(root, cls, fields["date"], non_schedule_fields)
 
     if date_changed:
-        root.date = fields["date"] if cls == root else root.date
-        cls.date = fields["date"]
-        root.save(update_fields=["date"]) if cls != root else cls.save()
-
-        apply_non_schedule_updates()
-        regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
-        emit_reschedule_event(root, update_series=True)
-        return cls
+        return handle_date_change(root, cls, fields["date"], non_schedule_fields)
 
     if non_schedule_fields:
-        apply_non_schedule_updates()
+        apply_non_schedule_updates(root, cls, non_schedule_fields)
 
     return cls
 

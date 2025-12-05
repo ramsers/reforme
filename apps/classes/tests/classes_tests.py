@@ -188,6 +188,17 @@ def test_create_class_missing_required_fields_should_fail(admin_client, instruct
     assert "date" in resp_no_date.data
     assert resp_no_date.data["date"][0] == "This field is required."
 
+    payload_no_instructor = {
+        "title": "Missing Instructor Class",
+        "description": "Class without instructor",
+        "size": 10,
+        "date": (timezone.now() + timezone.timedelta(days=2)).isoformat(),
+    }
+    resp_no_instructor = admin.post(classes_endpoint, payload_no_instructor, format="json")
+    assert resp_no_instructor.status_code == status.HTTP_400_BAD_REQUEST
+    assert "instructor_id" in resp_no_instructor.data
+    assert resp_no_instructor.data["instructor_id"][0] == "This field is required."
+
 
 
 def test_partial_update_single_class_successfully(admin_client, instructor_user):
