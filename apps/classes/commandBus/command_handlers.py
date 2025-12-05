@@ -108,11 +108,18 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
         if not non_schedule_fields:
             return
 
+        update_fields = list(non_schedule_fields.keys())
+
         for field, value in non_schedule_fields.items():
-            setattr(root, field, value)
             setattr(cls, field, value)
 
-        root.save(update_fields=list(non_schedule_fields.keys()))
+            if cls == root:
+                setattr(root, field, value)
+
+        if cls == root:
+            root.save(update_fields=update_fields)
+
+        cls.save(update_fields=update_fields)
 
         propagate_non_date_fields(root, cls, non_schedule_fields)
 
