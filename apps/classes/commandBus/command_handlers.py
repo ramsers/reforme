@@ -59,29 +59,34 @@ def handle_create_class(command: CreateClassCommand):
 def handle_partial_update_class(command: PartialUpdateClassCommand):
     cls = get_class_by_id(command.id)
     root = cls.parent_class or cls
+    user_tz = ZoneInfo(root.instructor.account.timezone)
 
     old_date = cls.date
     old_rec_type = root.recurrence_type if command.update_series else cls.recurrence_type
     old_rec_days = (root.recurrence_days or []) if command.update_series else (cls.recurrence_days or [])
     fields = collect_field_updates(command)
+    localized_existing = cls.date.astimezone(user_tz)
+    localized_incoming = fields.get("date").astimezone(user_tz) if "date" in fields else None
 
     if command.update_series and cls.parent_class and "date" in fields:
-        user_tz = ZoneInfo(root.instructor.account.timezone)
-
-        incoming_local = fields["date"].astimezone(user_tz)
-        child_local = cls.date.astimezone(user_tz)
-
-        aligned_local = child_local.replace(
-            hour=incoming_local.hour,
-            minute=incoming_local.minute,
-            second=incoming_local.second,
-            microsecond=incoming_local.microsecond,
+        aligned_local = localized_existing.replace(
+            hour=localized_incoming.hour,
+            minute=localized_incoming.minute,
+            second=localized_incoming.second,
+            microsecond=localized_incoming.microsecond,
         )
 
-        fields["date"] = aligned_local.astimezone(dt_timezone.utc)
+        localized_incoming = aligned_local
 
-    user_tz = ZoneInfo(root.instructor.account.timezone)
-    date_changed, time_changed = detect_datetime_change(fields, old_date, tzinfo=user_tz)
+    if localized_incoming:
+        fields["date"] = localized_incoming.astimezone(dt_timezone.utc)
+
+    change_fields = {"date": localized_incoming} if localized_incoming else {}
+    date_changed, time_changed = detect_datetime_change(
+        change_fields or fields,
+        localized_existing if change_fields else old_date,
+        tzinfo=None if change_fields else user_tz,
+    )
     rec_changed = recurrence_changed(command, old_rec_type, old_rec_days)
 
     non_schedule_fields = {
@@ -120,8 +125,8 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
         root.recurrence_days = command.recurrence_days
 
         if command.recurrence_type == "WEEKLY" and command.recurrence_days:
-            reference_dt = (fields.get("date") or cls.date).astimezone(user_tz)
-            aligned_local = align_datetime_to_recurrence(reference_dt, command.recurrence_days)
+            reference_local = localized_incoming or localized_existing
+            aligned_local = align_datetime_to_recurrence(reference_local, command.recurrence_days)
             aligned_utc = aligned_local.astimezone(dt_timezone.utc)
             cls.date = aligned_utc
             if cls == root:

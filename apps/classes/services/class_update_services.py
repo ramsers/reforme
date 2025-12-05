@@ -20,7 +20,7 @@ def get_default_max_instances(rec_type: ClassRecurrenceType | None, rec_days: li
 
 def build_recurring_schedule(
     root_class: Classes,
-    start_date: date,
+    start_date: datetime,
     metadata_overrides: dict | None = None,
     max_instances: int | None = None,
 ):
@@ -33,20 +33,11 @@ def build_recurring_schedule(
 
     user_tz = start_date.tzinfo
     today_local = timezone.now().astimezone(user_tz).date()
-
-    start_day = start_date.date()
-    start_time = start_date.timetz()
-
-    # today = timezone.now().date()
     future_instances = []
     occurrences = 0
 
-    # if isinstance(start_date, datetime):
-    #     start_date = start_date.date()
 
-    def make_instance(day):
-        local_dt = datetime.combine(day, start_time, tzinfo=user_tz)
-
+    def make_instance(local_dt: datetime):
         utc_dt = local_dt.astimezone(dt_timezone.utc)
 
         instance = Classes(
@@ -67,7 +58,7 @@ def build_recurring_schedule(
         if not rec_days:
             return []
 
-        current = start_day
+        current = start_date.date()
 
         while occurrences < max_instances:
             for offset in range(1, 8):
@@ -79,7 +70,9 @@ def build_recurring_schedule(
                 if day.weekday() not in rec_days:
                     continue
 
-                future_instances.append(make_instance(day))
+                local_dt = start_date.replace(year=day.year, month=day.month, day=day.day)
+
+                future_instances.append(make_instance(local_dt))
                 occurrences += 1
 
                 if occurrences >= max_instances:
@@ -90,31 +83,31 @@ def build_recurring_schedule(
 
     elif rec_type == "MONTHLY":
 
-        current = start_day
+        current = start_date
 
         while occurrences < max_instances:
             current = current + relativedelta(months=1)
             year = current.year
             month = current.month
-            target_day = start_day.day
+            target_day = start_date.day
             last_day = calendar.monthrange(year, month)[1]
 
             if target_day > last_day:
                 continue
 
-            target_date = date(year, month, target_day)
+            local_dt = start_date.replace(year=year, month=month, day=target_day)
 
-            if target_date <= today_local:
+            if local_dt.date() <= today_local:
                 continue
 
-            future_instances.append(make_instance(target_date))
+            future_instances.append(make_instance(local_dt))
 
             occurrences += 1
 
     elif rec_type == "YEARLY":
         for i in range(1, max_instances + 1):
-            dt = start_day + relativedelta(years=i)
-            if dt > today_local:
+            dt = start_date + relativedelta(years=i)
+            if dt.date() > today_local:
                 future_instances.append(make_instance(dt))
 
     return future_instances
