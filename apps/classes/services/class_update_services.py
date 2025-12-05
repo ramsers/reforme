@@ -16,16 +16,14 @@ def apply_non_schedule_updates(root_class, cls, non_schedule_fields):
     if not non_schedule_fields:
         return
 
-    update_fields = list(non_schedule_fields.keys())
-
     for field, value in non_schedule_fields.items():
         setattr(cls, field, value)
-        if cls == root_class:
-            setattr(root_class, field, value)
+        setattr(root_class, field, value)
 
-    if cls == root_class:
-        root_class.save(update_fields=update_fields)
-    cls.save(update_fields=update_fields)
+        Classes.objects.filter(pk=cls.pk).update(**non_schedule_fields)
+
+    if cls != root_class:
+        Classes.objects.filter(pk=root_class.pk).update(**non_schedule_fields)
 
     propagate_non_date_fields(root_class, cls, non_schedule_fields)
 
