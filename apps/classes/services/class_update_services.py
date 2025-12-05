@@ -8,6 +8,8 @@ from apps.classes.events.events import RescheduleClassEvent
 from apps.classes.events.event_dispatchers import class_event_dispatcher
 from dateutil.relativedelta import relativedelta
 from apps.classes.value_objects import ClassRecurrenceType
+from datetime import timezone as dt_timezone
+from zoneinfo import ZoneInfo
 
 
 def get_default_max_instances(rec_type: ClassRecurrenceType | None, rec_days: list[int]):
@@ -29,27 +31,29 @@ def build_recurring_schedule(
     if max_instances is None:
         max_instances = get_default_max_instances(rec_type, rec_days)
 
-    today = timezone.now().date()
+    user_tz = start_date.tzinfo
+    today_local = timezone.now().astimezone(user_tz).date()
+
+    start_day = start_date.date()
+    start_time = start_date.timetz()
+
+    # today = timezone.now().date()
     future_instances = []
     occurrences = 0
 
-    if isinstance(start_date, datetime):
-        start_date = start_date.date()
+    # if isinstance(start_date, datetime):
+    #     start_date = start_date.date()
 
-    def make_instance(for_date):
-        parent_dt = root_class.date
+    def make_instance(day):
+        local_dt = datetime.combine(day, start_time, tzinfo=user_tz)
 
-        child_dt = parent_dt.replace(
-            year=for_date.year,
-            month=for_date.month,
-            day=for_date.day,
-        )
+        utc_dt = local_dt.astimezone(dt_timezone.utc)
 
         instance = Classes(
             title=root_class.title,
             description=root_class.description,
             size=root_class.size,
-            date=child_dt,
+            date=utc_dt,
             instructor=root_class.instructor,
             parent_class=root_class,
             recurrence_type=None,
@@ -63,19 +67,19 @@ def build_recurring_schedule(
         if not rec_days:
             return []
 
-        current = start_date
+        current = start_day
 
         while occurrences < max_instances:
             for offset in range(1, 8):
-                dt = current + timedelta(days=offset)
+                day = current + timedelta(days=offset)
 
-                if dt <= today:
+                if day <= today_local:
                     continue
 
-                if dt.weekday() not in rec_days:
+                if day.weekday() not in rec_days:
                     continue
 
-                future_instances.append(make_instance(dt))
+                future_instances.append(make_instance(day))
                 occurrences += 1
 
                 if occurrences >= max_instances:
@@ -86,13 +90,13 @@ def build_recurring_schedule(
 
     elif rec_type == "MONTHLY":
 
-        current = start_date
+        current = start_day
 
         while occurrences < max_instances:
             current = current + relativedelta(months=1)
             year = current.year
             month = current.month
-            target_day = start_date.day
+            target_day = start_day.day
             last_day = calendar.monthrange(year, month)[1]
 
             if target_day > last_day:
@@ -100,7 +104,7 @@ def build_recurring_schedule(
 
             target_date = date(year, month, target_day)
 
-            if target_date <= today:
+            if target_date <= today_local:
                 continue
 
             future_instances.append(make_instance(target_date))
@@ -109,8 +113,8 @@ def build_recurring_schedule(
 
     elif rec_type == "YEARLY":
         for i in range(1, max_instances + 1):
-            dt = start_date + relativedelta(years=i)
-            if dt > today:
+            dt = start_day + relativedelta(years=i)
+            if dt > today_local:
                 future_instances.append(make_instance(dt))
 
     return future_instances
@@ -150,17 +154,27 @@ def detect_datetime_change(fields_to_update, old_date):
     return new_date.date() != old_date.date(), new_date.time() != old_date.time()
 
 
-def regenerate_future_classes(root_class: Classes, starting_from: Classes,  metadata_overrides=None):
+
+def regenerate_future_classes(root_class: Classes, starting_from: Classes, metadata_overrides=None):
     metadata_overrides = metadata_overrides or {}
 
+    # Determine user timezone (choose your source of truth)
+    # Example:
+    user_tz = ZoneInfo(root_class.instructor.account.timezone)
+
+    # Convert starting_from to LOCAL datetime
+    start_local = starting_from.date.astimezone(user_tz)
+
+    # Delete all future children
     Classes.objects.filter(
         parent_class=root_class,
         date__gte=starting_from.date,
     ).delete()
 
+    # Build new instances using LOCAL datetime (NOT .date())
     new_instances = build_recurring_schedule(
         root_class=root_class,
-        start_date=starting_from.date.date(),
+        start_date=start_local,     # MUST be datetime with tzinfo
         metadata_overrides=metadata_overrides,
         max_instances=None,
     )

@@ -58,7 +58,7 @@ class ClassesViewSet(viewsets.ModelViewSet):
         validator.is_valid(raise_exception=True)
         print('TESTO validator =================', validator.validated_data.get('date'), flush=True)
 
-        command = CreateClassCommand(**validator.validated_data)
+        command = CreateClassCommand(**validator.validated_data, user_timezone=request.user.account.timezone)
         created_class = classes_command_bus.handle(command)
 
         serializer = self.get_serializer(created_class)

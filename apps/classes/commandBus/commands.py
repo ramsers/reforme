@@ -9,6 +9,7 @@ class CreateClassCommand(typing.NamedTuple):
     description: str
     size: int
     date: datetime
+    user_timezone: str
     instructor_id: str | None = None
     recurrence_type: Optional[str] = None
     recurrence_days: Optional[List[int]] = None
