@@ -11,7 +11,7 @@ from apps.classes.services.class_update_services import (build_recurring_schedul
                                                          recurrence_changed, regenerate_future_classes,
                                                          detect_datetime_change, emit_reschedule_event,
                                                          collect_field_updates, shift_future_class_times,
-                                                         propagate_non_date_fields)
+                                                         propagate_non_date_fields, align_datetime_to_recurrence)
 from apps.classes.events.events import DeletedClassEvent
 from apps.classes.events.event_dispatchers import class_event_dispatcher
 from zoneinfo import ZoneInfo
@@ -27,10 +27,7 @@ def handle_create_class(command: CreateClassCommand):
     localized_start = start_date.astimezone(user_tz)
 
     if recurrence_type == "WEEKLY" and recurrence_days:
-        weekday = localized_start.weekday()
-        if weekday not in recurrence_days:
-            days_until_next = min((d - weekday) % 7 for d in recurrence_days)
-            localized_start += timedelta(days=days_until_next)
+        localized_start = align_datetime_to_recurrence(localized_start, recurrence_days)
 
     start_date = localized_start.astimezone(dt_timezone.utc)
 
@@ -121,7 +118,19 @@ def handle_partial_update_class(command: PartialUpdateClassCommand):
     if rec_changed:
         root.recurrence_type = command.recurrence_type
         root.recurrence_days = command.recurrence_days
+
+        if command.recurrence_type == "WEEKLY" and command.recurrence_days:
+            reference_dt = (fields.get("date") or cls.date).astimezone(user_tz)
+            aligned_local = align_datetime_to_recurrence(reference_dt, command.recurrence_days)
+            aligned_utc = aligned_local.astimezone(dt_timezone.utc)
+            cls.date = aligned_utc
+            if cls == root:
+                root.date = aligned_utc
+
         root.save()
+        if cls != root:
+            cls.save(update_fields=["date"])
+
         apply_non_schedule_updates()
         regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
         emit_reschedule_event(root, update_series=True, recurrence_change=True)

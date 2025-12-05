@@ -219,3 +219,16 @@ def propagate_non_date_fields(root_class, class_to_update, non_date_fields):
         parent_class=root_class,
         date__gte=class_to_update.date
     ).update(**non_date_fields)
+
+
+def align_datetime_to_recurrence(start_dt: datetime, recurrence_days: list[int]):
+    if not recurrence_days:
+        return start_dt
+
+    weekday = start_dt.weekday()
+
+    if weekday in recurrence_days:
+        return start_dt
+
+    offset = min((day - weekday) % 7 or 7 for day in recurrence_days)
+    return start_dt + timedelta(days=offset)
