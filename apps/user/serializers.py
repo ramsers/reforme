@@ -45,4 +45,5 @@ class UserListSerializer(serializers.ModelSerializer):
             'name',
             'phone_number',
             'role',
+            'account'
         ]
