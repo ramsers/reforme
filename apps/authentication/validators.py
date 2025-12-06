@@ -7,6 +7,7 @@ from apps.user.selectors.selectors import get_user_by_email
 from apps.user.value_objects import Role
 from apps.authentication.models import PasswordResetToken
 from django.utils import timezone
+from apps.user.validators import validate_iana_timezone
 
 
 class SignUpValidator(serializers.Serializer):
@@ -15,6 +16,10 @@ class SignUpValidator(serializers.Serializer):
     phone_number = serializers.CharField(required=False, allow_null=True)
     password = serializers.CharField(required=True, allow_null=False)
     role = serializers.ChoiceField(choices=Role.choices, required=False, allow_null=True)
+    timezone = serializers.CharField(
+        default="EST",
+        validators=[validate_iana_timezone],
+    )
 
     def validate(self, attrs):
         email = attrs.get('email')

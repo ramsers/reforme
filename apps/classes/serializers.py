@@ -4,6 +4,8 @@ from apps.booking.serializers import BookingClientSerializer
 from apps.classes.models import Classes
 from apps.user.serializers import UserSerializer
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
+from zoneinfo import ZoneInfo
 
 
 class ClassesSerializer(serializers.ModelSerializer):
@@ -30,6 +32,24 @@ class ClassesSerializer(serializers.ModelSerializer):
         if obj.parent_class:
             return obj.parent_class.recurrence_days
         return obj.recurrence_days
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request else None
+
+        account = None
+        if user is not None and hasattr(user, "account"):
+            account = user.account
+
+        user_timezone = getattr(account, "timezone", None)
+        if instance.date and user_timezone:
+            data["date"] = timezone.localtime(
+                instance.date, ZoneInfo(user_timezone)
+            ).isoformat()
+
+        return data
 
     class Meta:
         model = Classes

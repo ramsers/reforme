@@ -8,7 +8,24 @@ from apps.classes.events.events import RescheduleClassEvent
 from apps.classes.events.event_dispatchers import class_event_dispatcher
 from dateutil.relativedelta import relativedelta
 from apps.classes.value_objects import ClassRecurrenceType
+from datetime import timezone as dt_timezone
+from zoneinfo import ZoneInfo
 
+
+def apply_non_schedule_updates(root_class, cls, non_schedule_fields):
+    if not non_schedule_fields:
+        return
+
+    for field, value in non_schedule_fields.items():
+        setattr(cls, field, value)
+        setattr(root_class, field, value)
+
+        Classes.objects.filter(pk=cls.pk).update(**non_schedule_fields)
+
+    if cls != root_class:
+        Classes.objects.filter(pk=root_class.pk).update(**non_schedule_fields)
+
+    propagate_non_date_fields(root_class, cls, non_schedule_fields)
 
 def get_default_max_instances(rec_type: ClassRecurrenceType | None, rec_days: list[int]):
     if rec_type == "WEEKLY":
@@ -18,7 +35,7 @@ def get_default_max_instances(rec_type: ClassRecurrenceType | None, rec_days: li
 
 def build_recurring_schedule(
     root_class: Classes,
-    start_date: date,
+    start_date: datetime,
     metadata_overrides: dict | None = None,
     max_instances: int | None = None,
 ):
@@ -29,27 +46,20 @@ def build_recurring_schedule(
     if max_instances is None:
         max_instances = get_default_max_instances(rec_type, rec_days)
 
-    today = timezone.now().date()
+    user_tz = start_date.tzinfo
+    today_local = timezone.now().astimezone(user_tz).date()
     future_instances = []
     occurrences = 0
 
-    if isinstance(start_date, datetime):
-        start_date = start_date.date()
 
-    def make_instance(for_date):
-        parent_dt = root_class.date
-
-        child_dt = parent_dt.replace(
-            year=for_date.year,
-            month=for_date.month,
-            day=for_date.day,
-        )
+    def make_instance(local_dt: datetime):
+        utc_dt = local_dt.astimezone(dt_timezone.utc)
 
         instance = Classes(
             title=root_class.title,
             description=root_class.description,
             size=root_class.size,
-            date=child_dt,
+            date=utc_dt,
             instructor=root_class.instructor,
             parent_class=root_class,
             recurrence_type=None,
@@ -63,19 +73,21 @@ def build_recurring_schedule(
         if not rec_days:
             return []
 
-        current = start_date
+        current = start_date.date()
 
         while occurrences < max_instances:
             for offset in range(1, 8):
-                dt = current + timedelta(days=offset)
+                day = current + timedelta(days=offset)
 
-                if dt <= today:
+                if day <= today_local:
                     continue
 
-                if dt.weekday() not in rec_days:
+                if day.weekday() not in rec_days:
                     continue
 
-                future_instances.append(make_instance(dt))
+                local_dt = start_date.replace(year=day.year, month=day.month, day=day.day)
+
+                future_instances.append(make_instance(local_dt))
                 occurrences += 1
 
                 if occurrences >= max_instances:
@@ -98,19 +110,19 @@ def build_recurring_schedule(
             if target_day > last_day:
                 continue
 
-            target_date = date(year, month, target_day)
+            local_dt = start_date.replace(year=year, month=month, day=target_day)
 
-            if target_date <= today:
+            if local_dt.date() <= today_local:
                 continue
 
-            future_instances.append(make_instance(target_date))
+            future_instances.append(make_instance(local_dt))
 
             occurrences += 1
 
     elif rec_type == "YEARLY":
         for i in range(1, max_instances + 1):
             dt = start_date + relativedelta(years=i)
-            if dt > today:
+            if dt.date() > today_local:
                 future_instances.append(make_instance(dt))
 
     return future_instances
@@ -143,24 +155,33 @@ def recurrence_changed(command, old_type, old_days):
     )
 
 
-def detect_datetime_change(fields_to_update, old_date):
+def detect_datetime_change(fields_to_update, old_date, tzinfo=None):
     if 'date' not in fields_to_update:
         return False, False
     new_date = fields_to_update['date']
-    return new_date.date() != old_date.date(), new_date.time() != old_date.time()
+
+    if tzinfo:
+        new_date = new_date.astimezone(tzinfo)
+        old_date = old_date.astimezone(tzinfo)
+
+    return new_date.date() != old_date.date(), new_date.timetz() != old_date.timetz()
 
 
-def regenerate_future_classes(root_class: Classes, starting_from: Classes,  metadata_overrides=None):
+def regenerate_future_classes(root_class: Classes, starting_from: Classes, metadata_overrides=None):
     metadata_overrides = metadata_overrides or {}
+    user_tz = ZoneInfo(root_class.instructor.account.timezone)
 
-    Classes.objects.filter(
-        parent_class=root_class,
-        date__gte=starting_from.date,
-    ).delete()
+    start_local = starting_from.date.astimezone(user_tz)
+    delete_qs = Classes.objects.filter(parent_class=root_class)
+
+    if starting_from.parent_class:
+        delete_qs = delete_qs.filter(date__gte=starting_from.date)
+
+    delete_qs.delete()
 
     new_instances = build_recurring_schedule(
         root_class=root_class,
-        start_date=starting_from.date.date(),
+        start_date=start_local,
         metadata_overrides=metadata_overrides,
         max_instances=None,
     )
@@ -201,3 +222,74 @@ def propagate_non_date_fields(root_class, class_to_update, non_date_fields):
         parent_class=root_class,
         date__gte=class_to_update.date
     ).update(**non_date_fields)
+
+def handle_recurrence_update(root, cls, command, localized_existing, localized_incoming, non_schedule_fields):
+    root.recurrence_type = command.recurrence_type
+    root.recurrence_days = command.recurrence_days
+
+    if command.recurrence_type == "WEEKLY" and command.recurrence_days:
+        reference_local = localized_incoming or localized_existing
+        aligned_local = align_datetime_to_recurrence(reference_local, command.recurrence_days)
+        aligned_utc = aligned_local.astimezone(dt_timezone.utc)
+        cls.date = aligned_utc
+        if cls == root:
+            root.date = aligned_utc
+
+    root.save()
+    if cls != root:
+        cls.save(update_fields=["date"])
+
+    apply_non_schedule_updates(root, cls, non_schedule_fields)
+    regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
+    emit_reschedule_event(root, update_series=True, recurrence_change=True)
+
+    return cls
+
+
+def handle_time_change(root, cls, new_time, non_schedule_fields):
+    root.date = new_time if cls == root else root.date.replace(
+        hour=new_time.hour,
+        minute=new_time.minute,
+        second=new_time.second,
+        microsecond=new_time.microsecond,
+    )
+
+    cls.date = new_time
+
+    if cls == root:
+        root.save()
+    else:
+        root.save(update_fields=["date"])
+        cls.save(update_fields=["date"])
+
+    apply_non_schedule_updates(root, cls, non_schedule_fields)
+    shift_future_class_times(root, cls, new_time)
+    emit_reschedule_event(root, update_series=True)
+
+    return cls
+
+
+def handle_date_change(root, cls, new_date, non_schedule_fields):
+    root.date = new_date if cls == root else root.date
+    cls.date = new_date
+    root.save(update_fields=["date"]) if cls != root else cls.save()
+
+    apply_non_schedule_updates(root, cls, non_schedule_fields)
+    regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
+    emit_reschedule_event(root, update_series=True)
+
+    return cls
+
+
+
+def align_datetime_to_recurrence(start_dt: datetime, recurrence_days: list[int]):
+    if not recurrence_days:
+        return start_dt
+
+    weekday = start_dt.weekday()
+
+    if weekday in recurrence_days:
+        return start_dt
+
+    offset = min((day - weekday) % 7 or 7 for day in recurrence_days)
+    return start_dt + timedelta(days=offset)

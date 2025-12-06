@@ -21,6 +21,11 @@ class ClassesViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ClassesFilter
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.setdefault("request", self.request)
+        return context
+
     def get_queryset(self):
         bookings_prefetch = Prefetch(
             "bookings",
@@ -41,7 +46,7 @@ class ClassesViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = ClassesSerializer(instance)
+        serializer = self.get_serializer(instance)
 
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
@@ -49,10 +54,12 @@ class ClassesViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         validator = CreateClassesValidator(data=request.data)
         validator.is_valid(raise_exception=True)
-        command = CreateClassCommand(**validator.validated_data)
+
+        command = CreateClassCommand(**validator.validated_data, user_timezone=request.user.account.timezone)
         created_class = classes_command_bus.handle(command)
 
-        serializer = ClassesSerializer(created_class)
+        serializer = self.get_serializer(created_class)
+
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
     @is_admin
@@ -75,7 +82,7 @@ class ClassesViewSet(viewsets.ModelViewSet):
         )
 
         updated_class = classes_command_bus.handle(command)
-        serializer = ClassesSerializer(updated_class)
+        serializer = self.get_serializer(updated_class)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @is_admin

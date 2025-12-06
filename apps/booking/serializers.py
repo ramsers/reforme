@@ -10,14 +10,14 @@ class BookingSerializer(serializers.ModelSerializer):
     def get_client(self, value):
         client = value.client
 
-        return UserSerializer(client).data
+        return UserSerializer(client, context=self.context).data
 
     def get_booked_class(self, value):
         from apps.classes.serializers import ClassesSerializer
 
         booking = value.booked_class
 
-        return ClassesSerializer(booking).data
+        return ClassesSerializer(booking, context=self.context).data
 
     class Meta:
         model = Booking

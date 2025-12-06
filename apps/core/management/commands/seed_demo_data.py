@@ -4,7 +4,7 @@ from django.db import transaction
 from datetime import timedelta
 import random
 
-from apps.user.models import User, Role
+from apps.user.models import User, Role, Account
 from apps.classes.models import Classes, ClassRecurrenceType
 from apps.booking.models import Booking
 from apps.payment.models import PassPurchase
@@ -84,8 +84,8 @@ class Command(BaseCommand):
         for idx, series in enumerate(series_definitions):
             instructor = instructors[idx % len(instructors)]
 
-            parent_date = (timezone.now() + timedelta(days=1)).replace(
-                hour=series["hour"], minute=0, second=0, microsecond=0
+            parent_date = self._next_recurrence_date(
+                hour=series["hour"], recurrence_days=series["recurrence_days"]
             )
 
             parent = Classes.objects.create(
@@ -120,6 +120,21 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Demo data seeding complete."))
 
+    def _next_recurrence_date(self, hour: int, recurrence_days: list[int]):
+        now = timezone.localtime()
+
+        for offset in range(0, 7):
+            candidate = now + timedelta(days=offset)
+            candidate_dt = candidate.replace(
+                hour=hour, minute=0, second=0, microsecond=0
+            )
+
+            if candidate.weekday() in recurrence_days and candidate_dt > now:
+                return candidate_dt
+
+        next_week = now + timedelta(days=7)
+        return next_week.replace(hour=hour, minute=0, second=0, microsecond=0)
+
     def _create_user(self, email: str, name: str, role: str, password: str) -> User:
         user, created = User.objects.get_or_create(
             email=email,
@@ -134,6 +149,16 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Created user: {email} ({role})"))
         else:
             self.stdout.write(f"User already exists: {email} ({role})")
+
+        account, account_created = Account.objects.get_or_create(
+            user=user, defaults={"timezone": "EST"}
+        )
+        if account_created:
+            self.stdout.write(
+                self.style.SUCCESS(f"Created account for user: {email} ({role})")
+            )
+        else:
+            self.stdout.write(f"Account already exists for user: {email} ({role})")
         return user
 
     def _create_passes_for_clients(self, clients):

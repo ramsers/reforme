@@ -2,6 +2,14 @@ from rest_framework import serializers
 from apps.user.models import User
 from apps.user.selectors.selectors import get_user_by_id
 from apps.user.value_objects import Role
+from zoneinfo import ZoneInfo
+
+
+def validate_iana_timezone(value: str):
+    try:
+        ZoneInfo(value)
+    except ZoneInfoNotFoundError:
+        raise ValidationError("Invalid IANA timezone identifier.")
 
 
 class CreateUserValidator(serializers.Serializer):
@@ -10,6 +18,10 @@ class CreateUserValidator(serializers.Serializer):
     phone_number = serializers.CharField(required=False, allow_null=True)
     password = serializers.CharField(required=False, allow_null=True)
     role = serializers.ChoiceField(choices=Role.choices, required=True, allow_null=False)
+    timezone = serializers.CharField(
+        default="EST",
+        validators=[validate_iana_timezone],
+    )
 
 
     def validate_email(self, value):

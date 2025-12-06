@@ -20,3 +20,14 @@ class User(AbstractBaseUser, UUIDModel, TimestampModel):
     class Meta:
         ordering = ['-created_at']
         db_table = "users"
+
+
+
+
+class Account(UUIDModel, TimestampModel):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="account")
+    bio = models.TextField(blank=True, null=True)
+    timezone = models.CharField(max_length=255, default="EST")
+
+    class Meta:
+        db_table = "accounts"

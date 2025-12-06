@@ -18,7 +18,8 @@ def test_signup_successfully(api_client):
         "email": "newuser@example.com",
         "password": "Testpass123!",
         "name": "New User",
-        "role": Role.CLIENT
+        "role": Role.CLIENT,
+        "timezone": "America/New_York",
     }
 
     resp = api_client.post(signup_endpoint, payload, format="json")
@@ -32,6 +33,10 @@ def test_signup_successfully(api_client):
     assert user_data["email"] == payload["email"]
     assert user_data["name"] == payload["name"]
     assert user_data["role"] == payload["role"]
+    assert user_data["account"]["timezone"] == payload["timezone"]
+
+    user = User.objects.get(email=payload["email"])
+    assert user.account.timezone == payload["timezone"]
 
 
 def test_signup_missing_email_and_password(api_client):
