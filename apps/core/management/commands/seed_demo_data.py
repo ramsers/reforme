@@ -18,11 +18,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(self.style.WARNING("Clearing previous seed data..."))
 
-        Classes.objects.filter(title__startswith="[DEMO]").delete()
-        PassPurchase.objects.filter(pass_name__startswith="[DEMO]").delete()
-
-        self.stdout.write(self.style.SUCCESS("Old seed data removed."))
-
         self.stdout.write(self.style.WARNING("Creating users..."))
         admin = self._create_user(
             email="reforme_admin@gmail.com",

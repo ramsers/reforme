@@ -6,7 +6,7 @@ from apps.user.filters.user_filters import UserFilter
 from apps.user.validators import UpdateUserValidator, CreateUserValidator, DeleteUserValidator
 from apps.user.commandBus.commands import UpdateUserCommand, CreateUserCommand, DeleteUserCommand
 from apps.user.commandBus.command_bus import user_command_bus
-from apps.user.serializers import UserSerializer
+from apps.user.serializers import UserSerializer, UserListSerializer
 from apps.user.models import User
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -28,7 +28,11 @@ class UserViewSet(viewsets.ModelViewSet):
     pagination_class = UserPagination
 
     def get_queryset(self):
-        queryset = User.objects.all()
+        queryset = (
+            User.objects.select_related("account")
+            .prefetch_related("purchases")
+            .defer("password")
+        )
         list_actions = ["list", "all_instructors", "all_clients"]
 
         if getattr(self, "action", None) in list_actions:
@@ -39,9 +43,10 @@ class UserViewSet(viewsets.ModelViewSet):
                 "phone_number",
                 "role",
                 "created_at",
+                "account"
             )
 
-        return queryset.prefetch_related("purchases")
+        return queryset
 
     def get_serializer_class(self):
         if getattr(self, "action", None) in ["list", "all_instructors", "all_clients"]:
@@ -77,7 +82,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @is_admin
     @action(detail=False, methods=["get"], url_path="all-instructors")
     def all_instructors(self, request):
-        queryset = User.objects.filter(role=Role.INSTRUCTOR)
+        queryset = self.get_queryset().filter(role=Role.INSTRUCTOR)
         queryset = self.filter_queryset(queryset)
         show_all = request.query_params.get("all") in ["true", "1"]
 
@@ -85,13 +90,13 @@ class UserViewSet(viewsets.ModelViewSet):
             self.paginator.page_size = queryset.count()
 
         page = self.paginate_queryset(queryset)
-        serializer = UserSerializer(page, many=True)
+        serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
 
     @is_admin
     @action(detail=False, methods=["get"], url_path="all-clients")
     def all_clients(self, request):
-        queryset = User.objects.filter(role=Role.CLIENT)
+        queryset = self.get_queryset().filter(role=Role.CLIENT)
         queryset = self.filter_queryset(queryset)
         show_all = request.query_params.get("all") in ["true", "1"]
 
@@ -99,7 +104,7 @@ class UserViewSet(viewsets.ModelViewSet):
             self.paginator.page_size = queryset.count()
 
         page = self.paginate_queryset(queryset)
-        serializer = UserSerializer(page, many=True)
+        serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
 
     @is_admin

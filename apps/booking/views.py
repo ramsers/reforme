@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from apps.user.value_objects import Role
 from django_filters.rest_framework import DjangoFilterBackend
 from apps.booking.filters.booking_filter import BookingFilter
+from django.db.models import Prefetch
 
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -21,12 +22,21 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        bookings_prefetch = Prefetch(
+            "booked_class__bookings",
+            queryset=Booking.objects.select_related("client__account")
+            .prefetch_related("client__purchases")
+            .only("id", "client_id", "booked_class_id", "created_at"),
+        )
+
         queryset = Booking.objects.select_related(
             "client",
+            "client__account",
             "booked_class",
             "booked_class__instructor",
+            "booked_class__instructor__account",
             "booked_class__parent_class",
-        ).prefetch_related("booked_class__bookings__client")
+        ).prefetch_related("client__purchases", bookings_prefetch)
 
         if user.role == Role.ADMIN:
             return queryset
