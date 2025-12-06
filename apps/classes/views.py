@@ -52,17 +52,13 @@ class ClassesViewSet(viewsets.ModelViewSet):
 
     @is_admin
     def create(self, request, *args, **kwargs):
-        print('TESTO VIEW =================', request.data, flush=True)
-
         validator = CreateClassesValidator(data=request.data)
         validator.is_valid(raise_exception=True)
-        print('TESTO validator =================', validator.validated_data.get('date'), flush=True)
 
         command = CreateClassCommand(**validator.validated_data, user_timezone=request.user.account.timezone)
         created_class = classes_command_bus.handle(command)
 
         serializer = self.get_serializer(created_class)
-        print('TESTO VIEW =================', serializer.data, flush=True)
 
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 

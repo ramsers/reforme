@@ -121,8 +121,6 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Demo data seeding complete."))
 
     def _next_recurrence_date(self, hour: int, recurrence_days: list[int]):
-        """Return the next datetime that matches the recurrence days and hour."""
-
         now = timezone.localtime()
 
         for offset in range(0, 7):
