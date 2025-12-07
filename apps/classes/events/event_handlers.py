@@ -62,6 +62,7 @@ def handle_class_deleted_event(event: DeletedClassEvent):
         )
     )
 
+
     for b in bookings:
         send_html_email(
             subject=f'Class {cls.title} has been canceled',

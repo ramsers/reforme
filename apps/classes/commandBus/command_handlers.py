@@ -18,12 +18,15 @@ from apps.classes.events.event_dispatchers import class_event_dispatcher
 from zoneinfo import ZoneInfo
 from datetime import timezone as dt_timezone
 
+from apps.user.selectors.selectors import get_user_by_id
+
 
 def handle_create_class(command: CreateClassCommand):
+    instructor = get_user_by_id(command.instructor_id)
     start_date = command.date
     recurrence_type = command.recurrence_type
     recurrence_days = command.recurrence_days or []
-    user_tz = ZoneInfo(command.user_timezone)
+    user_tz = ZoneInfo(instructor.account.timezone)
     localized_start = start_date.astimezone(user_tz)
 
     if recurrence_type == "WEEKLY" and recurrence_days:

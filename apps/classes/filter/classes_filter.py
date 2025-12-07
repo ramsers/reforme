@@ -1,12 +1,17 @@
+from django.conf import settings
 import django_filters
 from apps.classes.models import Classes
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F, Value, DateTimeField
+from django.db.models.functions import Coalesce, TruncDate
+from django.db.models import Func
+import pytz
+from datetime import datetime, time
 
 
 class ClassesFilter(django_filters.FilterSet):
-    date = django_filters.DateFilter(field_name="date", lookup_expr="date")
-    start_date = django_filters.DateTimeFilter(field_name="date__date", lookup_expr="gte")
-    end_date = django_filters.DateTimeFilter(field_name="date__date", lookup_expr="lte")
+    date = django_filters.DateFilter(method="filter_by_date")
+    start_date = django_filters.DateFilter(method="filter_by_start_date")
+    end_date = django_filters.DateFilter(method="filter_by_end_date")
     title = django_filters.CharFilter(field_name="title", lookup_expr="icontains")
     has_bookings = django_filters.BooleanFilter(method="filter_has_bookings")
     search = django_filters.CharFilter(method="filter_search")
@@ -24,6 +29,41 @@ class ClassesFilter(django_filters.FilterSet):
         return queryset.filter(
             Q(title__icontains=value) | Q(description__icontains=value) | Q(instructor__name__icontains=value)
         )
+
+    def _get_timezone(self):
+        return (
+            self.request.user.account.timezone
+            if hasattr(self.request.user, "account")
+            else settings.TIME_ZONE
+        )
+
+    def _local_day_range(self, value):
+        tz = pytz.timezone(self._get_timezone())
+        local_start = tz.localize(datetime.combine(value, time.min))
+        local_end = tz.localize(datetime.combine(value, time.max))
+
+        return local_start.astimezone(pytz.utc), local_end.astimezone(pytz.utc)
+
+    def filter_by_date(self, queryset, name, value):
+        if not value:
+            return queryset
+
+        utc_start, utc_end = self._local_day_range(value)
+        return queryset.filter(date__gte=utc_start, date__lte=utc_end)
+
+    def filter_by_start_date(self, queryset, name, value):
+        if not value:
+            return queryset
+
+        utc_start, _ = self._local_day_range(value)
+        return queryset.filter(date__gte=utc_start)
+
+    def filter_by_end_date(self, queryset, name, value):
+        if not value:
+            return queryset
+
+        _, utc_end = self._local_day_range(value)
+        return queryset.filter(date__lte=utc_end)
 
     @property
     def qs(self):

@@ -27,13 +27,21 @@ class Command(BaseCommand):
         )
 
         instructors_data = [
-            ("julia.thompson@reforme.com", "Julia Thompson"),
-            ("marco.silvera@reforme.com", "Marco Silvera"),
+            (
+                "julia.thompson@reforme.com",
+                "Julia Thompson",
+                "Julia spent years traveling the world to study movement, learning from instructors across Europe and Asia before settling into her own teaching style. With over 12 years of experience guiding clients, she blends classical Pilates with restorative mobility work and always emphasizes sustainable progress for every body.",
+            ),
+            (
+                "marco.silvera@reforme.com",
+                "Marco Silvera",
+                "Marco comes from a competitive bodybuilding background and now channels that discipline into mindful Pilates coaching. He is known for designing programs that build strength without sacrificing mobility, and he brings an encouraging, detail-oriented approach that helps clients stay consistent and confident.",
+            ),
         ]
 
         instructors = [
-            self._create_user(email, name, Role.INSTRUCTOR, "password123!")
-            for email, name in instructors_data
+            self._create_user(email, name, Role.INSTRUCTOR, "password123!", bio)
+            for email, name, bio in instructors_data
         ]
 
         clients_data = [
@@ -130,7 +138,7 @@ class Command(BaseCommand):
         next_week = now + timedelta(days=7)
         return next_week.replace(hour=hour, minute=0, second=0, microsecond=0)
 
-    def _create_user(self, email: str, name: str, role: str, password: str) -> User:
+    def _create_user(self, email: str, name: str, role: str, password: str, bio: str | None = None) -> User:
         user, created = User.objects.get_or_create(
             email=email,
             defaults={
@@ -145,8 +153,10 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"User already exists: {email} ({role})")
 
+        normalized_timezone = timezone_name if isinstance(timezone, str) else "America/Toronto"
+
         account, account_created = Account.objects.get_or_create(
-            user=user, defaults={"timezone": "EST"}
+            user=user, defaults={"timezone": normalized_timezone, "bio": bio},
         )
         if account_created:
             self.stdout.write(
@@ -154,6 +164,23 @@ class Command(BaseCommand):
             )
         else:
             self.stdout.write(f"Account already exists for user: {email} ({role})")
+
+        account_updates = []
+        if bio and account.bio != bio:
+            account.bio = bio
+            account_updates.append("bio")
+
+        if normalized_timezone and account.timezone != normalized_timezone:
+            account.timezone = normalized_timezone
+            account_updates.append("timezone")
+
+        if account_updates:
+            account.save(update_fields=account_updates)
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Updated account for user: {email} ({role}) with {', '.join(account_updates)}"
+                )
+            )
         return user
 
     def _create_passes_for_clients(self, clients):
