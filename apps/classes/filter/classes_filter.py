@@ -29,32 +29,6 @@ class ClassesFilter(django_filters.FilterSet):
         return queryset.filter(
             Q(title__icontains=value) | Q(description__icontains=value) | Q(instructor__name__icontains=value)
         )
-    #
-    # def _with_local_date(self, queryset):
-    #     default_timezone = settings.TIME_ZONE
-    #     timezone_expr = Coalesce(F("instructor__account__timezone"), Value(default_timezone))
-    #     local_time_expr = Func(
-    #         timezone_expr, F("date"), function="timezone", output_field=DateTimeField()
-    #     )
-    #     return queryset.annotate(local_date=TruncDate(local_time_expr))
-    #
-    # def filter_by_local_date(self, queryset, name, value):
-    #     if not value:
-    #         return queryset
-    #     queryset = self._with_local_date(queryset)
-    #     return queryset.filter(local_date=value)
-
-    # def filter_by_start_date(self, queryset, name, value):
-    #     if not value:
-    #         return queryset
-    #     queryset = self._with_local_date(queryset)
-    #     return queryset.filter(local_date__gte=value)
-    #
-    # def filter_by_end_date(self, queryset, name, value):
-    #     if not value:
-    #         return queryset
-    #     queryset = self._with_local_date(queryset)
-    #     return queryset.filter(local_date__lte=value)
 
     def _get_timezone(self):
         return (
@@ -64,11 +38,7 @@ class ClassesFilter(django_filters.FilterSet):
         )
 
     def _local_day_range(self, value):
-        """
-        Convert a local (instructor) date to UTC start and end datetimes.
-        """
         tz = pytz.timezone(self._get_timezone())
-        # value is a date (YYYY-MM-DD)
         local_start = tz.localize(datetime.combine(value, time.min))
         local_end = tz.localize(datetime.combine(value, time.max))
 
