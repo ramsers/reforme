@@ -153,7 +153,7 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"User already exists: {email} ({role})")
 
-        normalized_timezone = timezone_name if isinstance(timezone, str) else "EST"
+        normalized_timezone = timezone_name if isinstance(timezone, str) else "America/Toronto"
 
         account, account_created = Account.objects.get_or_create(
             user=user, defaults={"timezone": normalized_timezone, "bio": bio},
