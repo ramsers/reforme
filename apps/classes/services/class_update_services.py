@@ -240,8 +240,8 @@ def handle_recurrence_update(root, cls, command, localized_existing, localized_i
         cls.save(update_fields=["date"])
 
     apply_non_schedule_updates(root, cls, non_schedule_fields)
-    regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
     emit_reschedule_event(root, update_series=True, recurrence_change=True)
+    regenerate_future_classes(root, cls, metadata_overrides=non_schedule_fields)
 
     return cls
 

@@ -3,6 +3,8 @@ from apps.classes.models import Classes
 from apps.classes.selectors.selectors import get_class_by_id
 from apps.core.email_service import send_html_email
 from apps.classes.events.events import RescheduleClassEvent, DeletedClassEvent
+from zoneinfo import ZoneInfo
+from django.utils import timezone
 
 
 def handle_class_rescheduled_event(event: RescheduleClassEvent):
@@ -26,21 +28,19 @@ def handle_class_rescheduled_event(event: RescheduleClassEvent):
     if event.recurrence_changed:
         subject = "Class schedule updated"
         template_name = "emails/class_removed.html"
+        class_date = _format_class_date(cls)
         context = {
             "class_name": cls.title,
-            "message": (
-                "Unfortunately, this class is no longer continuing at the previous schedule. "
-                "Please check the website for the new class schedule."
-            ),
+            "class_date": class_date,
         }
     else:
-        formatted_date = event.new_date.strftime("%A, %B %d at %I:%M %p")
+        formatted_date = _format_class_date(cls, event.new_date)
         subject = "Your class has been rescheduled"
         template_name = "emails/class_rescheduled.html"
         context = {
             "class_name": cls.title,
-            "new_date": formatted_date,
-            "message": f"Your class has been updated to {formatted_date}.",
+            "class_date": formatted_date,
+            "instructor_name": getattr(cls.instructor, "name", ""),
         }
 
     for email in emails:
@@ -70,6 +70,14 @@ def handle_class_deleted_event(event: DeletedClassEvent):
             template_name="emails/class_removed.html",
             context={
                 "class_name": cls.title,
-                "class_date": cls.date,
+                "class_date": _format_class_date(cls),
             }
         )
+
+
+def _format_class_date(cls: Classes, date_value=None):
+    target_date = date_value or cls.date
+    tz_name = getattr(getattr(cls.instructor, "account", None), "timezone", None)
+    tz = ZoneInfo(tz_name) if tz_name else timezone.get_current_timezone()
+    localized_date = timezone.localtime(target_date, tz)
+    return localized_date.strftime("%A, %B %d at %I:%M %p")
