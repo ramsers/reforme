@@ -27,24 +27,28 @@ def handle_send_create_booking_email(event: CreateBookingEvent):
     )
 
 def handle_send_delete_booking_email(event: DeleteBookingEvent):
-    booking: Booking = get_booking_by_id(event.booking_id)
-    class_timezone = _get_instructor_timezone(booking)
-    localized_date = timezone.localtime(booking.booked_class.date, class_timezone)
+    class_timezone = _get_timezone_from_name(event.instructor_timezone)
+    localized_date = timezone.localtime(event.class_date, class_timezone)
     formatted_date = localized_date.strftime("%A, %B %d at %I:%M %p")
 
     send_html_email(
-        subject=f"Booking cancelled for {booking.booked_class.title}",
-        to=booking.client.email,
+        subject=f"Booking cancelled for {event.class_title}",
+        to=event.client_email,
         template_name="emails/booking_cancelled.html",
         context={
-            'class_name': booking.booked_class.title,
+            'class_name': event.class_title,
             'class_date': formatted_date,
-            'instructor_name': getattr(booking.booked_class.instructor, "name", ""),
+            'instructor_name': event.instructor_name or "",
         }
     )
 
 
 def _get_instructor_timezone(booking: Booking):
-    instructor = booking.booked_class.instructor
+    booked_class = getattr(booking, "booked_class", None)
+    instructor = getattr(booked_class, "instructor", None)
     tz_name = getattr(getattr(instructor, "account", None), "timezone", None)
+    return ZoneInfo(tz_name) if tz_name else timezone.get_current_timezone()
+
+
+def _get_timezone_from_name(tz_name: str | None):
     return ZoneInfo(tz_name) if tz_name else timezone.get_current_timezone()
