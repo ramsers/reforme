@@ -6,7 +6,7 @@ from apps.classes.value_objects import ClassRecurrenceType
 
 class Classes(TimestampModel, UUIDModel):
     title = models.CharField(max_length=45)
-    description = models.CharField(max_length=255)
+    description = models.TextField()
     size = models.IntegerField(default=15)
     length = models.IntegerField(default=45)
     date = models.DateTimeField(null=True)
