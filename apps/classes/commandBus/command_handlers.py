@@ -126,8 +126,26 @@ def handle_delete_class(command: DeleteClassCommand):
     class_to_delete = Classes.objects.get(id=command.id)
     root_class = class_to_delete.parent_class or class_to_delete
 
+    affected_classes = Classes.objects.filter(
+        Q(parent_class=root_class) | Q(id=root_class.id)
+    ) if command.delete_series else Classes.objects.filter(id=class_to_delete.id)
+
+    booking_emails = set()
+    for cls in affected_classes:
+        booking_emails.update(cls.bookings.values_list("client__email", flat=True))
+
+    instructor_timezone = getattr(
+        getattr(class_to_delete.instructor, "account", None),
+        "timezone",
+        None,
+    )
+
     event = DeletedClassEvent(
         class_id=class_to_delete.id,
+        class_title=class_to_delete.title,
+        class_date=class_to_delete.date,
+        instructor_timezone=instructor_timezone,
+        booking_emails=list(booking_emails),
     )
 
     class_event_dispatcher.dispatch(event)
