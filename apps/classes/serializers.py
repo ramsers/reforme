@@ -36,17 +36,25 @@ class ClassesSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
+        instructor_timezone = None
+        instructor = getattr(instance, "instructor", None)
+        if instructor is not None and hasattr(instructor, "account"):
+            instructor_timezone = getattr(instructor.account, "timezone", None)
+
+        user_timezone = None
+
         request = self.context.get("request")
-        user = getattr(request, "user", None) if request else None
 
-        account = None
-        if user is not None and hasattr(user, "account"):
-            account = user.account
+        if request is not None:
+            user = getattr(request, "user", None)
+            user_account = getattr(user, "account", None)
+            user_timezone = getattr(user_account, "timezone", None)
 
-        user_timezone = getattr(account, "timezone", None)
-        if instance.date and user_timezone:
+        target_timezone = instructor_timezone or user_timezone
+
+        if instance.date and target_timezone:
             data["date"] = timezone.localtime(
-                instance.date, ZoneInfo(user_timezone)
+                instance.date, ZoneInfo(target_timezone)
             ).isoformat()
 
         return data

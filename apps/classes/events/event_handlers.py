@@ -28,13 +28,15 @@ def handle_class_rescheduled_event(event: RescheduleClassEvent):
     if event.recurrence_changed:
         subject = "Class schedule updated"
         template_name = "emails/class_removed.html"
-        class_date = _format_class_date(cls)
+        tz_name = _get_instructor_timezone(cls)
+        class_date = _format_class_date(cls.date, tz_name)
         context = {
             "class_name": cls.title,
             "class_date": class_date,
         }
     else:
-        formatted_date = _format_class_date(cls, event.new_date)
+        tz_name = _get_instructor_timezone(cls)
+        formatted_date = _format_class_date(event.new_date, tz_name)
         subject = "Your class has been rescheduled"
         template_name = "emails/class_rescheduled.html"
         context = {
@@ -53,31 +55,28 @@ def handle_class_rescheduled_event(event: RescheduleClassEvent):
 
 
 def handle_class_deleted_event(event: DeletedClassEvent):
-    cls = get_class_by_id(event.class_id)
+    if not event.booking_emails:
+        return
 
-    bookings = (
-        cls.bookings
-        .values(
-            email=F("client__email"),
-        )
-    )
+    formatted_date = _format_class_date(event.class_date, event.instructor_timezone)
 
-
-    for b in bookings:
+    for email in event.booking_emails:
         send_html_email(
-            subject=f'Class {cls.title} has been canceled',
-            to=b["email"],
+            subject=f"Class {event.class_title} has been canceled",
+            to=email,
             template_name="emails/class_removed.html",
             context={
-                "class_name": cls.title,
-                "class_date": _format_class_date(cls),
+                "class_name": event.class_title,
+                "class_date": formatted_date,
             }
         )
 
 
-def _format_class_date(cls: Classes, date_value=None):
-    target_date = date_value or cls.date
-    tz_name = getattr(getattr(cls.instructor, "account", None), "timezone", None)
-    tz = ZoneInfo(tz_name) if tz_name else timezone.get_current_timezone()
-    localized_date = timezone.localtime(target_date, tz)
+def _get_instructor_timezone(cls: Classes):
+    return getattr(getattr(cls.instructor, "account", None), "timezone", None)
+
+
+def _format_class_date(date_value, instructor_timezone: str | None):
+    tz = ZoneInfo(instructor_timezone) if instructor_timezone else timezone.get_current_timezone()
+    localized_date = timezone.localtime(date_value, tz)
     return localized_date.strftime("%A, %B %d at %I:%M %p")
