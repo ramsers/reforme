@@ -70,3 +70,7 @@ Use test cards:
 - 4242 4242 4242 4242 (success)
 - See stripe payment testing documentation here: https://docs.stripe.com/testing
 
+👤 Admin Dashboard Credentials
+- username: reforme_admin@gmail.com
+- password: admin123! ( Please do not change the admin password for other to have access ☺ )
+
