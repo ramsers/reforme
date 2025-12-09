@@ -1,6 +1,6 @@
 # Reforme — Pilates Studio Management Platform
 
-Reforme is a fullstack mini SaaS MVP platform designed for Pilates studios and fitness instructors.  
+Reforme is a fullstack mini SaaS MVP designed for Pilates and fitness studios.  
 It provides class scheduling, recurring classes, client bookings, Stripe payments, instructor profiles, and automated email workflows.
 
 Reforme is built with:
@@ -56,7 +56,7 @@ cp .env.example .env
 - docker exec -it reforme_api.web /bin/bash
 - python manage.py migrate
 
-** You may have to trigger a small change in a project file such as a view to kickstart the server (Simply comment and uncomment a line of code)
+** You may have to trigger a small change in a project file such as a view to kickstart the local server (Simply comment and uncomment a line of code)
 
 
 💳 Stripe Setup (Local)
