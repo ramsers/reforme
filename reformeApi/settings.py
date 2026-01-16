@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     'apps.booking.apps.BookingConfig',
     'apps.authentication.apps.AuthenticationConfig',
     'apps.payment.apps.PaymentConfig',
-    'apps.core'
+    'apps.core',
+    'apps.ai.apps.AiConfig',
 ]
 
 MIDDLEWARE = [
@@ -176,6 +177,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://reforme.onrender.com"
 ]
+
+
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+HF_MODEL = os.getenv("HF_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+
+if not HF_API_TOKEN:
+    print("WARNING: HF_API_TOKEN not set inside container")
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.sendgrid.net"

@@ -22,8 +22,6 @@ class User(AbstractBaseUser, UUIDModel, TimestampModel):
         db_table = "users"
 
 
-
-
 class Account(UUIDModel, TimestampModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="account")
     bio = models.TextField(blank=True, null=True)

@@ -34,6 +34,7 @@ class SignUpAPI(APIView):
 
 class LoginAPI(APIView):
     def post(self, request, *args, **kwargs):
+        print('hitting here =============', flush=True)
         validator = LoginValidator(data={**request.data})
         validator.is_valid(raise_exception=True)
 

@@ -22,6 +22,7 @@ from apps.authentication.views import SignUpAPI, LoginAPI, ForgotPasswordAPI, Re
 from apps.classes.views import ClassesViewSet
 from apps.booking.views import BookingViewSet
 from apps.payment.views import CreatePurchaseIntentApi, ListProductApi, StripeWebhookApi, CancelSubscriptionApi
+from apps.ai.views import InactiveClientsHelperView
 
 
 authentication_patterns = [
@@ -39,6 +40,11 @@ payment_patterns = [
 ]
 
 
+ai_patterns = [
+    path('inactive-clients-helper/', InactiveClientsHelperView.as_view(), name="inactive-clients-helper"),
+]
+
+
 router = routers.SimpleRouter(trailing_slash=False)
 router.register(r"users", UserViewSet, basename="users")
 router.register(r"classes", ClassesViewSet, basename="classes")
@@ -49,4 +55,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("authentication/", include(authentication_patterns)),
     path("payment/", include(payment_patterns)),
+    path("ai/", include(ai_patterns)),
 ]
