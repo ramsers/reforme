@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
+from apps.ai.helpers import extract_json
 from apps.ai.hf_client import hf_chat
 from apps.ai.reports import get_inactive_clients
 from apps.ai.prompts import build_inactive_clients_prompt
@@ -23,9 +24,9 @@ class InactiveClientsHelperView(APIView):
         raw = hf_chat(system_prompt, user_prompt)
 
         try:
-            start = raw.find("{")
-            end = raw.rfind("}")
-            parsed = json.loads(raw[start:end+1])
+            # start = raw.find("{")
+            # end = raw.rfind("}")
+            parsed = extract_json(raw)
         except Exception:
             return Response({"error": "AI did not return valid JSON", "raw": raw}, status=500)
 

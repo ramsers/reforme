@@ -12,7 +12,7 @@ def hf_chat(system_prompt: str, user_prompt: str) -> str:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        max_tokens=700,
+        max_tokens=1500,
         temperature=0.4,
         top_p=0.9
     )
